@@ -1,27 +1,16 @@
 <template>
   <div class="h-screen flex overflow-hidden">
-    <MobileSidebar :open="mobileMenuOpen" @close="mobileMenuOpen = false" />
-
-    <Sidebar />
-
     <div class="flex-1 min-w-0 flex flex-col overflow-hidden">
-      <MobileTopNav @open="mobileMenuOpen = true" />
-
       <main class="flex-1 flex overflow-hidden">
         <div class="flex-1 flex xl:overflow-hidden w-full">
           <section
             aria-labelledby="primary-heading"
             class="min-w-0 flex-1 h-full flex flex-col overflow-hidden lg:order-last"
           >
-            <h1 id="primary-heading" class="sr-only">
-              TODO: SETTING PAGE TITLE
-            </h1>
             <router-view v-slot="{ Component }">
               <component :is="Component" />
             </router-view>
           </section>
-
-          <SecondSidebar v-if="show2ndSidebar" />
         </div>
       </main>
     </div>

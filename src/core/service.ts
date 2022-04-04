@@ -4,7 +4,6 @@ import store from 'store'
 import router from 'router'
 import { ElMessageBox } from 'element-plus'
 import { AUTH_TOKEN } from './constants'
-import { getAuth } from 'firebase/auth'
 
 // axios
 axios.defaults.headers.post['Content-Type'] = 'application/json'
@@ -109,21 +108,6 @@ export default class Service {
       const response = await this.axios.request(opts)
       return response.data
     } catch (err: any) {
-      const { response } = err
-      if (response.status === 401) {
-        ElMessageBox.alert('Token has been expired', 'Warning', {
-          confirmButtonText: 'OK',
-          showClose: false,
-          callback: () => {
-            const auth = getAuth()
-            auth.signOut().then(() => {
-              store.commit('auth/SIGN_OUT')
-              router.push('/login')
-              router.go(0)
-            })
-          },
-        })
-      }
       throw err.response
     }
   }

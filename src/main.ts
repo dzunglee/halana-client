@@ -4,6 +4,7 @@ import { createApp, h } from 'vue'
 import ElementPlus from 'element-plus'
 import App from './App.vue'
 import AppComponents from './components'
+import Chat from 'vue3-beautiful-chat'
 import './index.css'
 import router from './router'
 import store from './store'
@@ -19,6 +20,7 @@ const createNewApp = () => {
   app.use(store)
   app.use(ElementPlus)
   app.use(AppComponents)
+  app.use(Chat)
   app.mount('#app')
   app.config.performance = true
 }

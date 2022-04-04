@@ -5,7 +5,6 @@ const { visualizer } = require('rollup-plugin-visualizer')
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
-import graphql from '@rollup/plugin-graphql'
 
 const resolvePath = (dir: string) => {
   return path.resolve(__dirname, 'src', dir)
@@ -14,7 +13,6 @@ const resolvePath = (dir: string) => {
 export default defineConfig({
   plugins: [
     vue(),
-    graphql(),
     AutoImport({
       resolvers: [ElementPlusResolver()],
     }),
