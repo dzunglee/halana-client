@@ -37,3 +37,19 @@ interface RouterAbility {
   name: string
   title: string
 }
+
+interface Message {
+  content?: string
+  seenAt?: date
+  createdAt?: date
+  customerId?: number
+  userId?: number
+}
+
+interface Conversation {
+  id?: number
+  name?: string
+  image?: string
+  unreadCount?: number
+  message?: Message
+}

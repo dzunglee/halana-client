@@ -2,7 +2,7 @@ const NotFound = () => import('modules/pages/views/404.vue')
 const Chat = () => import('modules/chat/views/index.vue')
 const routes = [
   {
-    path: '/',
+    path: '/c/:id',
     component: Chat,
     name: 'Halana messenger',
   },
