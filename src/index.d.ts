@@ -42,8 +42,8 @@ interface Message {
   content?: string
   seenAt?: date
   createdAt?: date
-  customerId?: number
-  userId?: number
+  senderId?: number
+  type?: 'customer' | 'supplier'
 }
 
 interface Conversation {
@@ -52,4 +52,9 @@ interface Conversation {
   image?: string
   unreadCount?: number
   message?: Message
+}
+
+interface Profile {
+  id?: number
+  name?: string
 }
