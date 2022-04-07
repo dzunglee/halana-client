@@ -32,22 +32,14 @@ export default class Service {
     this.defaultOptions = { ...this.defaultOptions, ...options }
     const { namespace = null, service = 'api' } = this.defaultOptions
 
-    const services = {
-      api: {
-        endpointEnvKey: 'VITE_API_SERVICE_ENDPOINT',
-      },
-      backend: {
-        endpointEnvKey: 'VITE_BACKEND_SERVICE_ENDPOINT',
-      },
-    }
-
     // Accept */*
     axios.defaults.headers.common.Accept = '*/*'
-    const endpoint = env(services[service].endpointEnvKey, '')
+    const endpoint = env('VITE_API_SERVICE_ENDPOINT')
 
     const baseURL = endpoint + (namespace ? `/${namespace}/` : '/')
 
     this.token = localStorage.getItem(AUTH_TOKEN)
+    console.log(this.token)
 
     const headers = {
       // 'Access-Control-Allow-Origin': '*',

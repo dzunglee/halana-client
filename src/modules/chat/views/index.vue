@@ -230,19 +230,19 @@
             </div>
             <div
               ref="typingRef"
-              class="items-end justify-end transition-all duration-200"
+              class="items-end justify-start transition-all duration-200"
               :class="{
                 'flex opacity-1': isTyping,
                 'hidden opacity-0': !isTyping,
               }"
             >
               <div
-                class="flex flex-col space-y-2 text-xs max-w-xs mx-2 order-2 items-start order-1"
+                class="flex flex-col space-y-2 text-xs max-w-xs mx-2 items-start order-2"
                 data-v-80ebedca=""
               >
                 <div data-v-80ebedca="">
                   <span
-                    class="px-2 py-3 rounded-xl inline-block bg-violet-600 text-white rounded-br-none"
+                    class="px-2 py-3 rounded-xl inline-block bg-violet-600 text-white rounded-bl-none"
                     data-v-80ebedca=""
                   >
                     <div class="typing flex space-x-1">
@@ -262,7 +262,7 @@
               <img
                 src="https://images.unsplash.com/photo-1549078642-b2ba4bda0cdb?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=facearea&amp;facepad=3&amp;w=144&amp;h=144"
                 alt="My profile"
-                class="w-6 h-6 rounded-full order-2"
+                class="w-6 h-6 rounded-full order-1"
                 data-v-80ebedca=""
               />
             </div>
@@ -368,7 +368,6 @@ import {
   inject,
   onBeforeMount,
   onMounted,
-  onUpdated,
   ref,
 } from 'vue'
 import {
@@ -381,6 +380,11 @@ import {
   MessengerSvgIcon,
 } from '../icons'
 import { useRoute } from 'vue-router'
+import { useStore } from 'vuex'
+import { AUTH_TOKEN } from 'core/constants'
+import { SET_SIDEBAR } from '../store/types'
+import { ChatService } from 'modules/chat/store/services'
+const chatService = new ChatService()
 
 export default defineComponent({
   name: 'Chat',
@@ -396,9 +400,15 @@ export default defineComponent({
   setup() {
     const emitterClient = inject<any>('emitterClient')
     const route = useRoute()
-    const sidebarOpen = ref(true)
-    const dialogOpen = ref(true)
-    const isDialog = ref(false)
+    const store = useStore()
+    const isAuthenticated = computed(
+      () => store.getters['chat/isAuthenticated'],
+    )
+    // ref
+    const inputAreaRef = ref<any>(null)
+    const chatContainerRef = ref<any>(null)
+    const typingRef = ref<any>(null)
+    // data
     const conversations = ref<Conversation[]>([
       {
         id: 1,
@@ -500,6 +510,11 @@ export default defineComponent({
         createdAt: '10:34 16/12/2021',
       },
     ])
+
+    // settings
+    const sidebarOpen = ref(true)
+    const dialogOpen = ref(true)
+    const isDialog = ref(false)
     const inputMsg = ref('')
     const curConversation = ref<Conversation>({})
     const timeOut: any = ref(null)
@@ -507,8 +522,8 @@ export default defineComponent({
     const sendMessage = () => {
       if (inputMsg.value)
         emitterClient.publish({
-          key: 'DiiDe4dJFzEAkoOgBj0BEj9I0qGnLMxw',
-          channel: 'chat/my_name',
+          key: 'IqVlgbQ_pp9and5CJRmRwvgPa_mLB_4z',
+          channel: `chat/message/${curConversation.value.id}`,
           message: JSON.stringify({
             content: inputMsg.value,
             type: 'customer',
@@ -542,13 +557,7 @@ export default defineComponent({
       return arr
     })
     //
-    const profile = ref<Profile>({
-      id: 1,
-      name: 'My Profile',
-    })
-    const onMessageWasSent = (message: any) => {
-      // called when the user sends a message
-    }
+    const profile = computed(() => store.getters['chat/user'])
     const openChat = () => {}
     const closeChat = () => {
       // called when the user clicks on the bottonm to close the chat
@@ -565,24 +574,18 @@ export default defineComponent({
       timeOut.value = setTimeout(() => {
         isTyping.value = false
       }, 5000)
-      console.log('Emit typing event')
     }
     const editMessage = (message: any) => {}
-
-    // custom
-    const inputAreaRef = ref<any>(null)
-    const chatContainerRef = ref<any>(null)
-    const typingRef = ref<any>(null)
 
     const onKeyup = (e: any) => {
       if (e.keyCode !== 13) {
         inputAreaRef.value.style.cssText = 'height:auto; padding:0'
         inputAreaRef.value.style.cssText =
           'height:' + inputAreaRef.value.scrollHeight + 'px'
-
+        console.log(`chat/typing/${curConversation.value.id}`)
         emitterClient.publish({
-          key: 'DiiDe4dJFzEAkoOgBj0BEj9I0qGnLMxw',
-          channel: 'chat/my_name/typing',
+          key: 'IqVlgbQ_pp9and5CJRmRwvgPa_mLB_4z',
+          channel: `chat/typing/${curConversation.value.id}`,
           message: JSON.stringify({
             messageType: 'typing',
           }),
@@ -593,23 +596,30 @@ export default defineComponent({
     const scrollToBottom = () => {
       chatContainerRef.value.scrollTop = chatContainerRef.value.scrollHeight
     }
+    const subscribe = (key: string, channel: string) => {
+      emitterClient.subscribe({
+        key,
+        channel,
+      })
+    }
 
     onMounted(() => {
       curConversation.value = conversations.value[0]
-      sidebarOpen.value = !!route.query.sidebar
       scrollToBottom()
-      console.log(route.query)
-    })
 
-    onUpdated(() => {
-      console.log('updated')
-    })
-
-    onBeforeMount(() => {
-      emitterClient.subscribe({
-        key: 'DiiDe4dJFzEAkoOgBj0BEj9I0qGnLMxw',
-        channel: 'chat/my_name',
-      })
+      // subscribe
+      subscribe(
+        'IqVlgbQ_pp9and5CJRmRwvgPa_mLB_4z',
+        `chat/conversation/customer/${profile.value.id}`,
+      )
+      subscribe(
+        'IqVlgbQ_pp9and5CJRmRwvgPa_mLB_4z',
+        `chat/message/${curConversation.value.id}`,
+      )
+      subscribe(
+        'IqVlgbQ_pp9and5CJRmRwvgPa_mLB_4z',
+        `chat/typing/${curConversation.value.id}`,
+      )
       emitterClient.on('message', (msg: any) => {
         console.log(JSON.parse(msg.asString()))
         const res = JSON.parse(msg.asString())
@@ -621,9 +631,17 @@ export default defineComponent({
           case 'typing':
             handleOnType()
             break
+          case 'maskRead':
+            break
+          case 'newConversation':
+            break
+          case 'delConversation':
+            break
         }
       })
     })
+
+    onBeforeMount(() => {})
 
     return {
       sidebarOpen,
@@ -643,7 +661,6 @@ export default defineComponent({
       handleScrollToTop,
       handleOnType,
       editMessage,
-      onMessageWasSent,
       onKeyup,
       sendMessage,
     }

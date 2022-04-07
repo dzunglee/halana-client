@@ -8,7 +8,8 @@
             class="min-w-0 flex-1 h-full flex flex-col overflow-hidden lg:order-last"
           >
             <router-view v-slot="{ Component }">
-              <component :is="Component" />
+              <component :is="Component" v-if="isAuthenticated" />
+              <div class="p-3" v-else>Unauthenticated</div>
             </router-view>
           </section>
         </div>
@@ -19,7 +20,7 @@
 
 <script lang="ts">
 import { RootState } from 'store/index'
-import { computed, defineComponent, ref } from 'vue'
+import { computed, defineComponent, onBeforeMount } from 'vue'
 import { useStore } from 'vuex'
 
 export default defineComponent({
@@ -30,18 +31,14 @@ export default defineComponent({
     const store = useStore<RootState>()
     const loading = computed(() => store.state.loading)
     const isAuthenticated = computed(
-      () => store.getters['auth/isAuthenticated'],
+      () => store.getters['chat/isAuthenticated'],
     )
-    const show2ndSidebar = computed(() => store.state.show2ndSidebar)
-    const showHeader = computed(() => store.state.showHeader)
-    const mobileMenuOpen = ref(false)
-
+    onBeforeMount(() => {
+      store.dispatch('chat/getMe')
+    })
     return {
       store,
-      mobileMenuOpen,
-      showHeader,
       isAuthenticated,
-      show2ndSidebar,
       loading,
     }
   },

@@ -15,14 +15,7 @@ const router: Router = createRouter({
   routes,
 })
 
-const init2ndSidebar = (to: RouteLocationNormalized) => {
-  const { show2ndSidebar = false } = to.meta
-  store.commit('SHOW_2ND_SIDEBAR', show2ndSidebar)
-}
-
-const beforeEnter = (to: RouteLocationNormalized) => {
-  init2ndSidebar(to)
-}
+const beforeEnter = (to: RouteLocationNormalized) => {}
 
 router.getRoutes().forEach((route) => (route.beforeEnter = beforeEnter))
 

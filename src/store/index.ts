@@ -1,5 +1,6 @@
 import { createStore } from 'vuex'
 import env from 'core/env'
+import { chat } from 'modules/chat/store'
 
 export type RootState = {
   version: string
@@ -23,9 +24,6 @@ const store = createStore<RootState>({
     SET_LOADING: (state: RootState, status: boolean) => {
       state.loading = status
     },
-    SHOW_2ND_SIDEBAR: (state: RootState, status: boolean) => {
-      state.show2ndSidebar = status
-    },
   },
   actions: {
     initialized(ctx, status?: boolean) {
@@ -33,7 +31,7 @@ const store = createStore<RootState>({
     },
   },
   getters: {},
-  modules: {},
+  modules: { chat },
 })
 
 export default store

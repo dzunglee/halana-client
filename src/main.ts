@@ -7,9 +7,7 @@ import AppComponents from './components'
 import './index.css'
 import router from './router'
 import store from './store'
-import { ConnectRequest } from 'emitter-io'
 
-// if (emitter) console.log(emitter)
 //@ts-ignore
 const client = emitter.connect({
   secret: true,
