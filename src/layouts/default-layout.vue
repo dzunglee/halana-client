@@ -34,7 +34,10 @@ export default defineComponent({
       () => store.getters['chat/isAuthenticated'],
     )
     onBeforeMount(() => {
-      store.dispatch('chat/getMe')
+      store.commit('SET_LOADING', true)
+      store.dispatch('chat/getMe').then(() => {
+        store.commit('SET_LOADING', false)
+      })
     })
     return {
       store,

@@ -6,7 +6,7 @@ const service = new ChatService()
 export const actions: ActionTree<ChatState, RootState> = {
   getMe({ commit }) {
     return service.getMe().then((resp: any) => {
-      commit(SET_AUTH, resp)
+      commit(SET_AUTH, resp?.data?.items)
       return resp
     })
   },

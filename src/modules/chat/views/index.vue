@@ -65,7 +65,7 @@
               }"
               v-for="(item, index) in conversations"
               :key="index"
-              @click="curConversation = item"
+              @click="getMessageByConversationId(index || undefined)"
             >
               <img
                 :src="item.image"
@@ -91,7 +91,7 @@
                   </span>
                   <span
                     v-if="
-                      item.message?.seenAt && item.message?.type === 'supplier'
+                      item.message?.seenAt && item.message?.type !== senderType
                     "
                   >
                     <TickSvgIcon />
@@ -189,27 +189,27 @@
               <div
                 class="flex items-end"
                 :class="{
-                  'justify-end ': messageGroup[0].type === 'customer',
+                  'justify-end ': messageGroup[0].type === senderType,
                 }"
               >
                 <div
                   class="flex flex-col space-y-2 text-xs max-w-xs mx-2 order-2 items-start"
                   :class="{
-                    'order-2': messageGroup[0].type === 'supplier',
-                    'order-1 ': messageGroup[0].type === 'customer',
+                    'order-2': messageGroup[0].type !== senderType,
+                    'order-1 ': messageGroup[0].type === senderType,
                   }"
                 >
                   <div v-for="(msg, i) in messageGroup" :key="i">
                     <span
                       class="px-4 py-2 rounded-lg inline-block"
                       :class="{
-                        'bg-gray-300 text-gray-600': msg.type === 'supplier',
-                        'bg-violet-600 text-white': msg.type === 'customer',
+                        'bg-gray-300 text-gray-600': msg.type !== senderType,
+                        'bg-violet-600 text-white': msg.type === senderType,
                         'rounded-bl-none bg-gray-300 text-gray-600':
-                          msg.type === 'supplier' &&
+                          msg.type !== senderType &&
                           i === messageGroup.length - 1,
                         'rounded-br-none':
-                          msg.type === 'customer' &&
+                          msg.type === senderType &&
                           i === messageGroup.length - 1,
                       }"
                     >
@@ -218,12 +218,16 @@
                   </div>
                 </div>
                 <img
-                  src="https://images.unsplash.com/photo-1549078642-b2ba4bda0cdb?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=facearea&amp;facepad=3&amp;w=144&amp;h=144"
+                  :src="
+                    senderType === messageGroup[0].type
+                      ? avatar
+                      : 'https://images.unsplash.com/photo-1549078642-b2ba4bda0cdb?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=facearea&amp;facepad=3&amp;w=144&amp;h=144'
+                  "
                   alt="My profile"
-                  class="w-6 h-6 rounded-full"
+                  class="w-6 h-6 rounded-full text-sm"
                   :class="{
-                    'order-1': messageGroup[0].type === 'supplier',
-                    'order-2 ': messageGroup[0].type === 'customer',
+                    'order-1': messageGroup[0].type !== senderType,
+                    'order-2 ': messageGroup[0].type === senderType,
                   }"
                 />
               </div>
@@ -242,18 +246,18 @@
               >
                 <div data-v-80ebedca="">
                   <span
-                    class="px-2 py-3 rounded-xl inline-block bg-violet-600 text-white rounded-bl-none"
+                    class="px-2 py-3 rounded-xl inline-block bg-gray-300 text-white rounded-bl-none"
                     data-v-80ebedca=""
                   >
                     <div class="typing flex space-x-1">
                       <span
-                        class="inline-block animate-bounce w-2 h-2 bg-white rounded-full"
+                        class="inline-block animate-bounce w-2 h-2 bg-gray-600 rounded-full"
                       ></span>
                       <span
-                        class="inline-block animate-bounce w-2 h-2 bg-white rounded-full animation-delay-150"
+                        class="inline-block animate-bounce w-2 h-2 bg-gray-600 rounded-full animation-delay-150"
                       ></span>
                       <span
-                        class="inline-block animate-bounce w-2 h-2 bg-white rounded-full animation-delay-300"
+                        class="inline-block animate-bounce w-2 h-2 bg-gray-600 rounded-full animation-delay-300"
                       ></span>
                     </div>
                   </span>
@@ -381,10 +385,8 @@ import {
 } from '../icons'
 import { useRoute } from 'vue-router'
 import { useStore } from 'vuex'
-import { AUTH_TOKEN } from 'core/constants'
 import { SET_SIDEBAR } from '../store/types'
-import { ChatService } from 'modules/chat/store/services'
-const chatService = new ChatService()
+import env from 'core/env'
 
 export default defineComponent({
   name: 'Chat',
@@ -401,9 +403,6 @@ export default defineComponent({
     const emitterClient = inject<any>('emitterClient')
     const route = useRoute()
     const store = useStore()
-    const isAuthenticated = computed(
-      () => store.getters['chat/isAuthenticated'],
-    )
     // ref
     const inputAreaRef = ref<any>(null)
     const chatContainerRef = ref<any>(null)
@@ -512,7 +511,11 @@ export default defineComponent({
     ])
 
     // settings
-    const sidebarOpen = ref(true)
+    const senderType = ref(env('VITE_SENDER_TYPE', ''))
+    const sidebarOpen = computed(() => store.getters['chat/openSidebar'])
+    const avatar = computed(
+      () => `${env('VITE_PROFILE_IMAGE_ENDPOINT')}/${profile.value.avatar}`,
+    )
     const dialogOpen = ref(true)
     const isDialog = ref(false)
     const inputMsg = ref('')
@@ -557,7 +560,7 @@ export default defineComponent({
       return arr
     })
     //
-    const profile = computed(() => store.getters['chat/user'])
+    const profile = computed<Profile>(() => store.getters['chat/user'])
     const openChat = () => {}
     const closeChat = () => {
       // called when the user clicks on the bottonm to close the chat
@@ -568,6 +571,7 @@ export default defineComponent({
     }
     const handleOnType = () => {
       isTyping.value = true
+      setTimeout(() => scrollToBottom(), 100)
       if (timeOut.value) {
         clearTimeout(timeOut.value)
       }
@@ -582,7 +586,6 @@ export default defineComponent({
         inputAreaRef.value.style.cssText = 'height:auto; padding:0'
         inputAreaRef.value.style.cssText =
           'height:' + inputAreaRef.value.scrollHeight + 'px'
-        console.log(`chat/typing/${curConversation.value.id}`)
         emitterClient.publish({
           key: 'IqVlgbQ_pp9and5CJRmRwvgPa_mLB_4z',
           channel: `chat/typing/${curConversation.value.id}`,
@@ -601,6 +604,17 @@ export default defineComponent({
         key,
         channel,
       })
+    }
+    const getMessageByConversationId = (id?: number) => {
+      if (id) {
+        curConversation.value = conversations.value[id]
+      }
+      // get message by conversation id
+    }
+    const getConversations = () => {
+      const senderId = profile.value.id
+      // get message by conversation id
+      console.log('get conversation by id', senderId)
     }
 
     onMounted(() => {
@@ -626,7 +640,7 @@ export default defineComponent({
         switch (res.messageType) {
           case 'newMessage':
             messages.value.push(res)
-            setTimeout(() => scrollToBottom(), 100)
+            setTimeout(() => scrollToBottom())
             break
           case 'typing':
             handleOnType()
@@ -641,9 +655,14 @@ export default defineComponent({
       })
     })
 
-    onBeforeMount(() => {})
+    onBeforeMount(() => {
+      const { sidebar } = route.query
+      store.commit(`chat/${SET_SIDEBAR}`, !!sidebar)
+      getConversations()
+    })
 
     return {
+      senderType,
       sidebarOpen,
       dialogOpen,
       isDialog,
@@ -656,6 +675,7 @@ export default defineComponent({
       inputMsg,
       isTyping,
       profile,
+      avatar,
       openChat,
       closeChat,
       handleScrollToTop,
@@ -663,6 +683,7 @@ export default defineComponent({
       editMessage,
       onKeyup,
       sendMessage,
+      getMessageByConversationId,
     }
   },
 })

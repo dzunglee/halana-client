@@ -57,4 +57,5 @@ interface Conversation {
 interface Profile {
   id?: number
   name?: string
+  avatar?: string
 }
