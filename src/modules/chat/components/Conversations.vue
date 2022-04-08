@@ -16,27 +16,27 @@
       <div
         class="flex items-center p-3 cursor-pointer"
         :class="{
-          'bg-slate-200 rounded': curConversation.id === item.id,
+          'bg-slate-200 rounded':
+            curConversation && curConversation._id === item._id,
         }"
         v-for="(item, index) in conversations"
         :key="index"
         @click="handleSelectConversation(item)"
       >
         <img
-          :src="item.image"
-          :alt="item.name"
+          src="https://images.unsplash.com/photo-1549078642-b2ba4bda0cdb?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=3&w=144&h=144"
+          alt="A"
           class="w-10 h-10 rounded-full"
         />
         <div class="flex flex-1 flex-col leading-tight pl-3">
           <div class="flex items-center justify-between">
-            <span class="text-sm font-semibold text-slate-700">{{
-              item.name
-            }}</span
+            <span class="text-sm font-semibold text-slate-700"
+              >Conversation {{ item.sk }}</span
             ><span class="text-xs text-slate-500">10:34 PM</span>
           </div>
           <div class="flex items-center justify-between">
             <span class="text-xs text-gray-600">
-              {{ item?.message?.content }}
+              {{ item?.latestMessage?.content }}
             </span>
             <span
               v-if="item.unreadCount && item.unreadCount > 0"
@@ -45,7 +45,10 @@
               {{ item.unreadCount }}
             </span>
             <span
-              v-if="item.message?.seenAt && item.message?.type !== senderType"
+              v-if="
+                item.latestMessage?.seenAt &&
+                item.latestMessage?.type !== senderType
+              "
             >
               <TickSvgIcon />
             </span>
@@ -62,6 +65,7 @@ import {
   inject,
   onBeforeMount,
   onMounted,
+  watch,
   ref,
 } from 'vue'
 import {
@@ -75,7 +79,7 @@ import {
 } from '../icons'
 import { useRoute } from 'vue-router'
 import { useStore } from 'vuex'
-import { SET_SIDEBAR } from '../store/types'
+import { SET_CURRENT_CONVERSATION, SET_SIDEBAR } from '../store/types'
 import env from 'core/env'
 
 export default defineComponent({
@@ -91,53 +95,71 @@ export default defineComponent({
   },
   setup() {
     const emitterClient = inject<any>('emitterClient')
-    const route = useRoute()
+    const eventHub = inject<any>('eventHub')
     const store = useStore()
     // data
-    const conversations = computed<Conversation>(
-      () => store.getters['chat/conversations'],
+    const conversations = computed<Conversation[]>(
+      () => store.state.chat.conversations,
     )
-    const curConversation = computed(
-      () => store.getters['chat/curConversation'],
+    const curConversation = computed<Conversation>(
+      () => store.state.chat.curConversation,
     )
+    const emitterKey = computed<string>(() => store.state.chat.emitterKey)
+    const senderType = computed<string>(() => store.state.chat.senderType)
+    const receiverId = computed<number>(() => store.state.chat.receiverId)
     // settings
-    const senderType = ref(env('VITE_SENDER_TYPE', ''))
     const sidebarOpen = computed(() => store.getters['chat/isOpenSidebar'])
     //
     const profile = computed<Profile>(() => store.getters['chat/user'])
-    const subscribe = (key: string, channel: string) => {
+    const subscribe = (channel: string) => {
       emitterClient.subscribe({
-        key,
+        key: emitterKey.value,
         channel,
       })
     }
     const getConversations = () => {
-      store.dispatch('chat/actGetConversations')
-      // get message by conversation id
+      store.commit('SET_LOADING', true)
+      store.dispatch('chat/actGetConversations').then(() => {
+        const cur = conversations.value.find((item) => {
+          if (senderType.value === 'customer') {
+            return item.channelId === receiverId.value
+          }
+          return item.channelId === receiverId.value
+        })
+        if (cur) {
+          store.commit(`chat/${SET_CURRENT_CONVERSATION}`, cur)
+        } else if (senderType.value === 'customer') {
+          createConversation()
+        }
+        store.commit('SET_LOADING', false)
+      })
+    }
+
+    const createConversation = () => {
+      store.commit('SET_LOADING', true)
+      store
+        .dispatch('chat/actCreateConversations', {
+          channelId: receiverId.value,
+        })
+        .then((resp: Conversation) => {
+          store.commit(`chat/${SET_CURRENT_CONVERSATION}`, resp)
+          store.commit('SET_LOADING', false)
+        })
     }
 
     const handleSelectConversation = (item: Conversation) => {
-      console.log(item)
+      store.commit(`chat/${SET_CURRENT_CONVERSATION}`, item)
     }
 
+    watch(curConversation, (conversation: Conversation) => {
+      subscribe(`chat/message/${conversation._id}`)
+    })
+
     onMounted(() => {
-      // subscribe
-      subscribe(
-        'IqVlgbQ_pp9and5CJRmRwvgPa_mLB_4z',
-        `chat/conversation/customer/${profile.value.id}`,
-      )
-      subscribe(
-        'IqVlgbQ_pp9and5CJRmRwvgPa_mLB_4z',
-        `chat/message/${curConversation.value.id}`,
-      )
-      emitterClient.on('message', (msg: any) => {
-        console.log(JSON.parse(msg.asString()))
-      })
+      subscribe(`chat/conversation/customer/${profile.value.id}`)
     })
 
     onBeforeMount(() => {
-      const { sidebar } = route.query
-      store.commit(`chat/${SET_SIDEBAR}`, !!sidebar)
       getConversations()
     })
 

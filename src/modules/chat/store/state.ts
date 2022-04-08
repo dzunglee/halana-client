@@ -7,5 +7,8 @@ export const state: ChatState = {
   user: undefined,
   conversations: [],
   messages: [],
-  emitterKey: env('EMITTER_KEY', ''),
+  emitterKey: env('VITE_EMITTER_KEY', ''),
+  senderType: env('VITE_SENDER_TYPE', ''),
+  receiverId: undefined,
+  senderId: undefined,
 }

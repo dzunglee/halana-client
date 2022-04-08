@@ -51,7 +51,14 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onBeforeMount, onMounted, ref } from 'vue'
+import {
+  computed,
+  defineComponent,
+  inject,
+  onBeforeMount,
+  onMounted,
+  ref,
+} from 'vue'
 import {
   CloseChatSvgIcon,
   CloseSidebarSvgIcon,
@@ -61,7 +68,13 @@ import {
 import { Conversations, Messages } from '../components'
 import { useRoute } from 'vue-router'
 import { useStore } from 'vuex'
-import { SET_RECEIVER_ID, SET_SENDER_ID, SET_SIDEBAR } from '../store/types'
+import {
+  ADD_CONVERSATION,
+  ADD_MESSAGE,
+  SET_RECEIVER_ID,
+  SET_SENDER_ID,
+  SET_SIDEBAR,
+} from '../store/types'
 
 export default defineComponent({
   name: 'Chat',
@@ -74,6 +87,8 @@ export default defineComponent({
     Messages,
   },
   setup() {
+    const emitterClient = inject<any>('emitterClient')
+    const eventHub = inject<any>('eventHub')
     const route = useRoute()
     const store = useStore()
     // ref
@@ -81,8 +96,12 @@ export default defineComponent({
     const chatContainerRef = ref<any>(null)
     const typingRef = ref<any>(null)
     // data
+    const curConversation = computed<Conversation>(
+      () => store.state.chat.curConversation,
+    )
 
     // settings
+    const senderType = computed<string>(() => store.state.chat.senderType)
     const sidebarOpen = computed(() => store.getters['chat/isOpenSidebar'])
     const dialogOpen = ref(true)
     const isDialog = ref(false)
@@ -90,14 +109,41 @@ export default defineComponent({
     //
     const profile = computed<Profile>(() => store.getters['chat/user'])
 
-    onMounted(() => {})
+    const onMessageFunc: {
+      [key: string]: (data: any) => void
+    } = {
+      newMessage(msg: Message) {
+        if (msg.conversationId === curConversation.value._id) {
+          store.commit(`chat/${ADD_MESSAGE}`, msg)
+        }
+        if (msg.type !== senderType.value) {
+          eventHub?.emit('onMsgCome')
+        }
+      },
+      typing(type: string) {
+        if (type !== senderType.value) {
+          eventHub?.emit('onTyping')
+        }
+      },
+      newConversation(conversation: Conversation) {
+        store.commit(`chat/${ADD_CONVERSATION}`, conversation)
+      },
+    }
+
+    onMounted(() => {
+      emitterClient.on('message', (msg: any) => {
+        const res = JSON.parse(msg.asString())
+        onMessageFunc[res.type](res.body)
+        console.log(JSON.parse(msg.asString()))
+      })
+    })
 
     onBeforeMount(() => {
       const { sidebar } = route.query
       const { cId } = route.params
       const ids = cId.toString().split(':')
       if (ids.length === 2) {
-        store.commit(`chat/${SET_RECEIVER_ID}`, ids[1])
+        store.commit(`chat/${SET_RECEIVER_ID}`, parseInt(ids[1]))
       }
       store.commit(`chat/${SET_SIDEBAR}`, !!sidebar)
     })

@@ -1,19 +1,20 @@
+import env from 'core/env'
 import Service from 'core/service'
 
 export class ChatService extends Service {
   public getMe() {
-    return this.post('/customer/ei/getInfo')
+    return this.post(env('VITE_GET_PROFILE', ''))
   }
   public getConversations() {
     return this.get('conversations')
   }
-  public getMessages(id: number) {
-    return this.post('messages', id)
+  public getMessages(params: { [key: string]: any }) {
+    return this.get('messages', params)
   }
-  public sendMessage(message: Message) {
-    return this.post('messages', message)
+  public sendMessage(params: { [key: string]: any }) {
+    return this.post('messages', params)
   }
-  public createConversation(receiverId: Message, type: string) {
-    return this.post('messages', { receiverId, type })
+  public createConversation(params: { [key: string]: any }) {
+    return this.post('conversations', params)
   }
 }

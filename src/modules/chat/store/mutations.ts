@@ -1,5 +1,7 @@
 import { MutationTree } from 'vuex'
 import {
+  ADD_CONVERSATION,
+  ADD_MESSAGE,
   ChatState,
   SET_AUTH,
   SET_CONVERSATION,
@@ -31,5 +33,17 @@ export const mutations: MutationTree<ChatState> = {
   },
   [SET_RECEIVER_ID](state: ChatState, id: number) {
     state.receiverId = id
+  },
+  [ADD_MESSAGE](state: ChatState, message: Message) {
+    state.conversations?.forEach((conversation: Conversation) => {
+      if (conversation._id === message.conversationId) {
+        conversation.latestMessage = message
+      }
+    })
+
+    state.messages?.push(message)
+  },
+  [ADD_CONVERSATION](state: ChatState, conversation: Conversation) {
+    state.conversations?.unshift(conversation)
   },
 }

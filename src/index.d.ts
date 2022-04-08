@@ -39,6 +39,7 @@ interface RouterAbility {
 }
 
 interface Message {
+  conversationId: string
   content?: string
   seenAt?: date
   createdAt?: date
@@ -47,6 +48,8 @@ interface Message {
 }
 
 interface Conversation {
+  _id: string
+  sk?: string
   channelId?: number
   customerId?: number
   unreadCount?: number

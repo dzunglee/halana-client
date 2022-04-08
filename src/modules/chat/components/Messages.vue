@@ -265,6 +265,7 @@ import {
   onBeforeMount,
   onMounted,
   ref,
+  watch,
 } from 'vue'
 import {
   CloseChatSvgIcon,
@@ -275,9 +276,7 @@ import {
   TickSvgIcon,
   MessengerSvgIcon,
 } from '../icons'
-import { useRoute } from 'vue-router'
 import { useStore } from 'vuex'
-import { SET_SIDEBAR } from '../store/types'
 import env from 'core/env'
 
 export default defineComponent({
@@ -293,67 +292,72 @@ export default defineComponent({
   },
   setup() {
     const emitterClient = inject<any>('emitterClient')
-    const route = useRoute()
+    const eventHub = inject<any>('eventHub')
     const store = useStore()
     // ref
     const inputAreaRef = ref<any>(null)
     const chatContainerRef = ref<any>(null)
     const typingRef = ref<any>(null)
     // data
-    const messages = ref<Message[]>([
-      {
-        content: 'Can be verified on any platform using docker',
-        type: 'supplier',
-        createdAt: '10:34 16/12/2021',
-      },
-      {
-        content:
-          'Your error message says permission denied, npm global installs must be given root privileges.',
-        type: 'customer',
-        createdAt: '10:34 16/12/2021',
-      },
-      {
-        content: "Command was run with root privileges. I'm sure about that.",
-        type: 'supplier',
-        createdAt: '10:34 16/12/2021',
-      },
-      {
-        content: "I've update the description so it's more obviously now",
-        type: 'supplier',
-        createdAt: '10:34 16/12/2021',
-      },
-      {
-        content: 'FYI https://askubuntu.com/a/700266/510172',
-        type: 'supplier',
-        createdAt: '10:34 16/12/2021',
-      },
-      {
-        content:
-          "Check the line above (it ends with a # so, I'm running it as root )# npm install -g @vue/devtools",
-        type: 'supplier',
-        createdAt: '10:34 16/12/2021',
-      },
-      {
-        content:
-          "Any updates on this issue? I'm getting the same error when trying to install devtools. Thanks",
-        type: 'customer',
-        createdAt: '10:34 16/12/2021',
-      },
-      {
-        content: 'Are you using sudo?',
-        type: 'supplier',
-        createdAt: '10:34 16/12/2021',
-      },
-      {
-        content:
-          "Thanks for your message David. I thought I'm alone with this issue. Please, 👍 the issue to support it :)",
-        type: 'customer',
-        createdAt: '10:34 16/12/2021',
-      },
-    ])
+    const curConversation = computed<Conversation>(
+      () => store.state.chat.curConversation,
+    )
+    const messages = computed<Message[]>(() => store.state.chat.messages)
+    // const messages = ref<Message[]>([
+    //   {
+    //     content: 'Can be verified on any platform using docker',
+    //     type: 'supplier',
+    //     createdAt: '10:34 16/12/2021',
+    //   },
+    //   {
+    //     content:
+    //       'Your error message says permission denied, npm global installs must be given root privileges.',
+    //     type: 'customer',
+    //     createdAt: '10:34 16/12/2021',
+    //   },
+    //   {
+    //     content: "Command was run with root privileges. I'm sure about that.",
+    //     type: 'supplier',
+    //     createdAt: '10:34 16/12/2021',
+    //   },
+    //   {
+    //     content: "I've update the description so it's more obviously now",
+    //     type: 'supplier',
+    //     createdAt: '10:34 16/12/2021',
+    //   },
+    //   {
+    //     content: 'FYI https://askubuntu.com/a/700266/510172',
+    //     type: 'supplier',
+    //     createdAt: '10:34 16/12/2021',
+    //   },
+    //   {
+    //     content:
+    //       "Check the line above (it ends with a # so, I'm running it as root )# npm install -g @vue/devtools",
+    //     type: 'supplier',
+    //     createdAt: '10:34 16/12/2021',
+    //   },
+    //   {
+    //     content:
+    //       "Any updates on this issue? I'm getting the same error when trying to install devtools. Thanks",
+    //     type: 'customer',
+    //     createdAt: '10:34 16/12/2021',
+    //   },
+    //   {
+    //     content: 'Are you using sudo?',
+    //     type: 'supplier',
+    //     createdAt: '10:34 16/12/2021',
+    //   },
+    //   {
+    //     content:
+    //       "Thanks for your message David. I thought I'm alone with this issue. Please, 👍 the issue to support it :)",
+    //     type: 'customer',
+    //     createdAt: '10:34 16/12/2021',
+    //   },
+    // ])
 
     // settings
-    const senderType = ref(env('VITE_SENDER_TYPE', ''))
+    const emitterKey = computed<string>(() => store.state.chat.emitterKey)
+    const senderType = computed<string>(() => store.state.chat.senderType)
     const sidebarOpen = computed(() => store.getters['chat/isOpenSidebar'])
     const avatar = computed(
       () => `${env('VITE_PROFILE_IMAGE_ENDPOINT')}/${profile.value.avatar}`,
@@ -361,23 +365,21 @@ export default defineComponent({
     const dialogOpen = ref(true)
     const isDialog = ref(false)
     const inputMsg = ref('')
-    const curConversation = ref<Conversation>({})
     const timeOut: any = ref(null)
     const isTyping = ref(false)
     const sendMessage = () => {
-      if (inputMsg.value)
-        emitterClient.publish({
-          key: 'IqVlgbQ_pp9and5CJRmRwvgPa_mLB_4z',
-          channel: `chat/message/${curConversation.value.id}`,
-          message: JSON.stringify({
+      if (inputMsg.value) {
+        store
+          .dispatch('chat/actSendMessage', {
+            conversationId: curConversation.value._id,
             content: inputMsg.value,
-            type: 'customer',
-            createdAt: '10:34 16/12/2021',
-            messageType: 'newMessage',
-          }),
-        })
-      inputMsg.value = ''
-      inputAreaRef.value.focus()
+          })
+          .then((res) => {
+            console.log('sent', res)
+          })
+        inputMsg.value = ''
+        inputAreaRef.value.focus()
+      }
     }
 
     const messageGroups = computed<Message[][]>(() => {
@@ -403,6 +405,12 @@ export default defineComponent({
     })
     //
     const profile = computed<Profile>(() => store.getters['chat/user'])
+    const subscribe = (channel: string) => {
+      emitterClient.subscribe({
+        key: emitterKey.value,
+        channel,
+      })
+    }
     const handleOnType = () => {
       isTyping.value = true
       setTimeout(() => scrollToBottom(), 100)
@@ -420,9 +428,10 @@ export default defineComponent({
           'height:' + inputAreaRef.value.scrollHeight + 'px'
         emitterClient.publish({
           key: 'IqVlgbQ_pp9and5CJRmRwvgPa_mLB_4z',
-          channel: `chat/typing/${curConversation.value.id}`,
+          channel: `chat/typing/${curConversation.value._id}`,
           message: JSON.stringify({
-            messageType: 'typing',
+            type: 'typing',
+            body: senderType.value,
           }),
         })
       }
@@ -430,48 +439,50 @@ export default defineComponent({
     const scrollToBottom = () => {
       chatContainerRef.value.scrollTop = chatContainerRef.value.scrollHeight
     }
-    const subscribe = (key: string, channel: string) => {
-      emitterClient.subscribe({
-        key,
-        channel,
-      })
+
+    const getMessages = (conversation: Conversation) => {
+      store.commit('SET_LOADING', true)
+      store
+        .dispatch('chat/actGetMessages', {
+          conversationId: conversation._id,
+        })
+        .then(() => store.commit('SET_LOADING', false))
     }
 
+    watch(curConversation, (conversation: Conversation) => {
+      console.log('fire')
+      subscribe(`chat/conversation/customer/${profile.value.id}`)
+      subscribe(`chat/message/${curConversation.value._id}`)
+      subscribe(`chat/typing/${curConversation.value._id}`)
+      getMessages(conversation)
+    })
     onMounted(() => {
       scrollToBottom()
-
-      // subscribe
-      subscribe(
-        'IqVlgbQ_pp9and5CJRmRwvgPa_mLB_4z',
-        `chat/conversation/customer/${profile.value.id}`,
-      )
-      subscribe(
-        'IqVlgbQ_pp9and5CJRmRwvgPa_mLB_4z',
-        `chat/message/${curConversation.value.id}`,
-      )
-      subscribe(
-        'IqVlgbQ_pp9and5CJRmRwvgPa_mLB_4z',
-        `chat/typing/${curConversation.value.id}`,
-      )
-      emitterClient.on('message', (msg: any) => {
-        console.log(JSON.parse(msg.asString()))
-        const res = JSON.parse(msg.asString())
-        switch (res.messageType) {
-          case 'newMessage':
-            messages.value.push(res)
-            setTimeout(() => scrollToBottom())
-            break
-          case 'typing':
-            handleOnType()
-            break
-          case 'maskRead':
-            break
-          case 'newConversation':
-            break
-          case 'delConversation':
-            break
-        }
+      eventHub?.on('onTyping', () => {
+        handleOnType()
       })
+      eventHub?.on('onMsgCome', () => {
+        isTyping.value = false
+      })
+      // emitterClient.on('message', (msg: any) => {
+      //   console.log(JSON.parse(msg.asString()))
+      //   const res = JSON.parse(msg.asString())
+      //   switch (res.messageType) {
+      //     case 'newMessage':
+      //       messages.value.push(res)
+      //       setTimeout(() => scrollToBottom())
+      //       break
+      //     case 'typing':
+      //       handleOnType()
+      //       break
+      //     case 'maskRead':
+      //       break
+      //     case 'newConversation':
+      //       break
+      //     case 'delConversation':
+      //       break
+      //   }
+      // })
     })
 
     onBeforeMount(() => {})
