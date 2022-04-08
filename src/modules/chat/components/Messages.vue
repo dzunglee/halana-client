@@ -426,14 +426,15 @@ export default defineComponent({
         inputAreaRef.value.style.cssText = 'height:auto; padding:0'
         inputAreaRef.value.style.cssText =
           'height:' + inputAreaRef.value.scrollHeight + 'px'
-        emitterClient.publish({
-          key: 'IqVlgbQ_pp9and5CJRmRwvgPa_mLB_4z',
-          channel: `chat/typing/${curConversation.value._id}`,
-          message: JSON.stringify({
-            type: 'typing',
-            body: senderType.value,
-          }),
-        })
+        if (curConversation.value)
+          emitterClient.publish({
+            key: emitterKey.value,
+            channel: `chat/typing/${curConversation.value._id}`,
+            message: JSON.stringify({
+              type: 'typing',
+              body: senderType.value,
+            }),
+          })
       }
     }
     const scrollToBottom = () => {
