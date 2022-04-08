@@ -1,13 +1,24 @@
 import { RootState } from 'store'
 import { ActionTree } from 'vuex'
-import { ChatState, SET_AUTH } from './types'
+import { ChatState, SET_AUTH, SET_CONVERSATION } from './types'
 import { ChatService } from './services'
-const service = new ChatService()
+const getInfoService = new ChatService({ service: 'getInfoApi' })
+const service = new ChatService({ service: 'getInfoApi' })
 export const actions: ActionTree<ChatState, RootState> = {
-  getMe({ commit }) {
-    return service.getMe().then((resp: any) => {
+  actGetMe({ commit }) {
+    return getInfoService.getMe().then((resp: any) => {
       commit(SET_AUTH, resp?.data?.items)
-      return resp
+    })
+  },
+
+  actGetConversations({ commit }) {
+    return service.getConversations().then((resp: any) => {
+      commit(SET_CONVERSATION, resp?.data?.items)
+    })
+  },
+  actGetMessages({ commit }, id: number) {
+    return service.getMessages(id).then((resp: any) => {
+      commit(SET_CONVERSATION, resp?.data?.items)
     })
   },
 }

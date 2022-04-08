@@ -6,6 +6,6 @@ export const mutations: MutationTree<ChatState> = {
     state.user = user
   },
   [SET_SIDEBAR](state: ChatState, value: boolean) {
-    state.openSidebar = value
+    state.isOpenSidebar = value
   },
 }

@@ -35,7 +35,7 @@ export default defineComponent({
     )
     onBeforeMount(() => {
       store.commit('SET_LOADING', true)
-      store.dispatch('chat/getMe').then(() => {
+      store.dispatch('chat/actGetMe').then(() => {
         store.commit('SET_LOADING', false)
       })
     })

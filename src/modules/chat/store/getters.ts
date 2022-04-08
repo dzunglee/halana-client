@@ -5,5 +5,5 @@ import { ChatState } from './types'
 export const getters: GetterTree<ChatState, RootState> = {
   user: (state: ChatState) => state.user,
   isAuthenticated: (state: ChatState) => !!state.user,
-  openSidebar: (state: ChatState) => state.openSidebar,
+  isOpenSidebar: (state: ChatState) => state.isOpenSidebar,
 }

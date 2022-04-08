@@ -10,7 +10,7 @@ axios.defaults.headers.post['Content-Type'] = 'application/json'
 
 export interface ServiceOptions {
   namespace?: string
-  service?: 'api' | 'backend'
+  service?: 'getInfoApi' | 'api'
 }
 
 export default class Service {
@@ -32,14 +32,22 @@ export default class Service {
     this.defaultOptions = { ...this.defaultOptions, ...options }
     const { namespace = null, service = 'api' } = this.defaultOptions
 
+    const services = {
+      getInfoApi: {
+        endpointEnvKey: 'VITE_GET_INFO_ENDPOINT',
+      },
+      api: {
+        endpointEnvKey: 'VITE_API_SERVICE_ENDPOINT',
+      },
+    }
+
     // Accept */*
     axios.defaults.headers.common.Accept = '*/*'
-    const endpoint = env('VITE_API_SERVICE_ENDPOINT')
+    const endpoint = env(services[service].endpointEnvKey, '')
 
     const baseURL = endpoint + (namespace ? `/${namespace}/` : '/')
 
     this.token = localStorage.getItem(AUTH_TOKEN)
-    console.log(this.token)
 
     const headers = {
       // 'Access-Control-Allow-Origin': '*',
