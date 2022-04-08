@@ -13,8 +13,8 @@ const service = new ChatService()
 export const actions: ActionTree<ChatState, RootState> = {
   actGetMe({ commit }) {
     return getInfoService.getMe().then((resp: any) => {
-      commit(SET_AUTH, resp?.data?.items)
-      commit(SET_SENDER_ID, resp?.data?.items?.id)
+      commit(SET_AUTH, resp?.data?.items || resp.data)
+      commit(SET_SENDER_ID, resp?.data?.items?.id || resp.data.id)
     })
   },
   actGetConversations({ commit }) {
