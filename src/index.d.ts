@@ -47,11 +47,10 @@ interface Message {
 }
 
 interface Conversation {
-  id?: number
-  name?: string
-  image?: string
+  channelId?: number
+  customerId?: number
   unreadCount?: number
-  message?: Message
+  latestMessage?: Message
 }
 
 interface Profile {

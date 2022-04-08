@@ -61,7 +61,7 @@ import {
 import { Conversations, Messages } from '../components'
 import { useRoute } from 'vue-router'
 import { useStore } from 'vuex'
-import { SET_SIDEBAR } from '../store/types'
+import { SET_RECEIVER_ID, SET_SENDER_ID, SET_SIDEBAR } from '../store/types'
 
 export default defineComponent({
   name: 'Chat',
@@ -94,6 +94,11 @@ export default defineComponent({
 
     onBeforeMount(() => {
       const { sidebar } = route.query
+      const { cId } = route.params
+      const ids = cId.toString().split(':')
+      if (ids.length === 2) {
+        store.commit(`chat/${SET_RECEIVER_ID}`, ids[1])
+      }
       store.commit(`chat/${SET_SIDEBAR}`, !!sidebar)
     })
 

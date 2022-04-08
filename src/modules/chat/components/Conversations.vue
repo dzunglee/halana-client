@@ -94,60 +94,15 @@ export default defineComponent({
     const route = useRoute()
     const store = useStore()
     // data
-    const conversations = ref<Conversation[]>([
-      {
-        id: 1,
-        name: 'Dung',
-        image: 'https://place-hold.it/300',
-        unreadCount: 0,
-        message: {
-          content: 'Cái đậu xanh',
-          createdAt: '10:34 16/12/2021',
-          seenAt: '10:34 16/12/2021',
-          senderId: 1,
-          type: 'supplier',
-        },
-      },
-      {
-        id: 2,
-        name: 'Kha',
-        image: 'https://place-hold.it/300',
-        unreadCount: 2,
-        message: {
-          content: 'Trong đầm gì đẹp bằng sen',
-          createdAt: '10:34 16/12/2021',
-          seenAt: null,
-        },
-      },
-      {
-        id: 3,
-        name: 'Tin',
-        image: 'https://place-hold.it/300',
-        unreadCount: 0,
-        message: {
-          content: 'Mấy chú bớt nóng',
-          createdAt: '10:34 16/12/2021',
-          seenAt: null,
-          senderId: 2,
-        },
-      },
-      {
-        id: 4,
-        name: 'Lực',
-        image: 'https://place-hold.it/300',
-        unreadCount: 0,
-        message: {
-          content: 'Tất cả cút cút ra để a thể hiện',
-          createdAt: '10:34 16/12/2021',
-          seenAt: null,
-          senderId: 2,
-        },
-      },
-    ])
+    const conversations = computed<Conversation>(
+      () => store.getters['chat/conversations'],
+    )
+    const curConversation = computed(
+      () => store.getters['chat/curConversation'],
+    )
     // settings
     const senderType = ref(env('VITE_SENDER_TYPE', ''))
     const sidebarOpen = computed(() => store.getters['chat/isOpenSidebar'])
-    const curConversation = ref<Conversation>({})
     //
     const profile = computed<Profile>(() => store.getters['chat/user'])
     const subscribe = (key: string, channel: string) => {
@@ -157,9 +112,8 @@ export default defineComponent({
       })
     }
     const getConversations = () => {
-      const senderId = profile.value.id
+      store.dispatch('chat/actGetConversations')
       // get message by conversation id
-      console.log('get conversation by id', senderId)
     }
 
     const handleSelectConversation = (item: Conversation) => {
@@ -167,8 +121,6 @@ export default defineComponent({
     }
 
     onMounted(() => {
-      curConversation.value = conversations.value[0]
-
       // subscribe
       subscribe(
         'IqVlgbQ_pp9and5CJRmRwvgPa_mLB_4z',

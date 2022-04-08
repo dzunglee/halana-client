@@ -5,7 +5,7 @@ export class ChatService extends Service {
     return this.post('/customer/ei/getInfo')
   }
   public getConversations() {
-    return this.post('conversations')
+    return this.get('conversations')
   }
   public getMessages(id: number) {
     return this.post('messages', id)

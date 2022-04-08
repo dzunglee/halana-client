@@ -7,5 +7,5 @@ export const state: ChatState = {
   user: undefined,
   conversations: [],
   messages: [],
-  emitterKey: env('VITE_EMIITER_KEY', ''),
+  emitterKey: env('EMITTER_KEY', ''),
 }

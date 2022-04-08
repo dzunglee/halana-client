@@ -6,8 +6,15 @@ export interface ChatState {
   curConversation?: Conversation
   messages?: Message[]
   emitterKey: string
+  receiverId: number
+  senderId: number
 }
 export const SET_AUTH = 'SET_AUTH'
 export const SET_SIDEBAR = 'SET_SIDEBAR'
 
 export const SET_CONVERSATION = 'SET_CONVERSATION'
+export const SET_CURRENT_CONVERSATION = 'SET_CURRENT_CONVERSATION'
+export const SET_MESSAGES = 'SET_MESSAGES'
+
+export const SET_SENDER_ID = 'SET_SENDER_ID'
+export const SET_RECEIVER_ID = 'SET_RECEIVER_ID'
