@@ -41,6 +41,11 @@ export const mutations: MutationTree<ChatState> = {
     state.conversations?.forEach((conversation: Conversation) => {
       if (conversation._id === message.conversationId) {
         conversation.latestMessage = message
+        if (
+          conversation.unreadCount !== undefined &&
+          message.type !== state.senderType
+        )
+          conversation.unreadCount += 1
       }
     })
 
@@ -64,7 +69,7 @@ export const mutations: MutationTree<ChatState> = {
       })
     }
     state.conversations?.forEach((c) => {
-      if (c._id === message._id) {
+      if (c._id === message.conversationId) {
         if (c.unreadCount && c.unreadCount > 0) c.unreadCount -= 1
         if (c.latestMessage && c.latestMessage._id === message._id) {
           c.latestMessage.status = 'READ'

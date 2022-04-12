@@ -95,7 +95,6 @@ export default defineComponent({
     // ref
     const inputAreaRef = ref<any>(null)
     const chatContainerRef = ref<any>(null)
-    const typingRef = ref<any>(null)
     // data
     const curConversation = computed<Conversation>(
       () => store.state.chat.curConversation,
@@ -160,7 +159,6 @@ export default defineComponent({
       isDialog,
       inputAreaRef,
       chatContainerRef,
-      typingRef,
       profile,
       toggleDialog,
     }
