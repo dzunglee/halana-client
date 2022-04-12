@@ -1,7 +1,7 @@
 <template>
   <div
-    class="flex opacity-1 flex-col px-0 bg-gray-100 shadow-inner transition-all duration-200 overflow-hidden"
-    :class="{ 'w-0 opacity-0': !sidebarOpen, 'w-80': sidebarOpen }"
+    class="flex flex-col px-0 bg-gray-100 shadow-inner transition-all duration-200 overflow-hidden"
+    :class="{ 'flex-1': !sidebarOpen, '': sidebarOpen }"
   >
     <div class="relative mt-2 flex mb-2 px-2">
       <span class="absolute inset-y-0 pl-4 flex items-center">

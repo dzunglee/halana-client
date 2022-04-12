@@ -1,10 +1,11 @@
 export interface ChatState {
   isOpenSidebar: boolean
+  isDialog: boolean
   loading: boolean
   user?: Profile
   conversations?: Conversation[]
   curConversation?: Conversation
-  messages?: Message[]
+  messages: Message[]
   emitterKey: string
   senderType: string
   receiverId?: number
@@ -21,3 +22,4 @@ export const SET_SENDER_ID = 'SET_SENDER_ID'
 export const SET_RECEIVER_ID = 'SET_RECEIVER_ID'
 export const ADD_MESSAGE = 'ADD_MESSAGE'
 export const ADD_CONVERSATION = 'ADD_CONVERSATION'
+export const TOGGLE_SIDEBAR = 'ADD_CONVERSATION'

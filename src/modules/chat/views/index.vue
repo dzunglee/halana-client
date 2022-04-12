@@ -27,7 +27,7 @@
           <button
             type="button"
             class="inline-flex items-center justify-center h-6 w-6 transition duration-500 ease-in-out text-gray-500 hover:bg-gray-300 focus:outline-none"
-            @click="sidebarOpen = !sidebarOpen"
+            @click="toggleDialog"
           >
             <CloseSidebarSvgIcon v-if="!sidebarOpen" />
             <OpenSidebarSvgIcon v-else />
@@ -43,8 +43,8 @@
         </div>
       </div>
       <div class="flex flex-1 overflow-auto">
-        <Conversations />
         <Messages />
+        <Conversations />
       </div>
     </div>
   </div>
@@ -74,6 +74,7 @@ import {
   SET_RECEIVER_ID,
   SET_SENDER_ID,
   SET_SIDEBAR,
+  TOGGLE_SIDEBAR,
 } from '../store/types'
 
 export default defineComponent({
@@ -128,6 +129,10 @@ export default defineComponent({
       },
     }
 
+    const toggleDialog = () => {
+      store.commit(`chat/${TOGGLE_SIDEBAR}`)
+    }
+
     onMounted(() => {
       emitterClient.on('message', (msg: any) => {
         const res = JSON.parse(msg.asString())
@@ -154,6 +159,7 @@ export default defineComponent({
       chatContainerRef,
       typingRef,
       profile,
+      toggleDialog,
     }
   },
 })

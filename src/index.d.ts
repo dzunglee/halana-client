@@ -41,7 +41,7 @@ interface RouterAbility {
 interface Message {
   conversationId: string
   content?: string
-  seenAt?: date
+  status?: 'READ' | 'UNREAD'
   createdAt?: date
   senderId?: number
   type?: 'customer' | 'supplier'
@@ -60,4 +60,14 @@ interface Profile {
   id?: number
   name?: string
   avatar?: string
+}
+
+interface PageInfo {
+  cursor: string
+  hasNextPage: boolean
+}
+
+interface PagingResponse {
+  pageInfo: PageInfo
+  results: any
 }

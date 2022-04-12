@@ -3,6 +3,7 @@ import { ChatState } from './types'
 
 export const state: ChatState = {
   isOpenSidebar: true,
+  isDialog: !!env('VITE_IS_DIALOG', ''),
   loading: true,
   user: undefined,
   conversations: [],

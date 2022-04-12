@@ -1,5 +1,8 @@
 <template>
-  <div class="flex-1 justify-between flex flex-col border-l">
+  <div
+    class="justify-between flex flex-col border-l opacity-1 transition-all duration-200"
+    :class="{ 'flex-none opacity-0 w-0': !sidebarOpen, 'flex-1': sidebarOpen }"
+  >
     <div
       class="flex flex-col sm:flex-row items-center justify-between py-0 border-b-2 border-gray-200"
     >
@@ -107,9 +110,11 @@
                     msg.type !== senderType && i === messageGroup.length - 1,
                   'rounded-br-none':
                     msg.type === senderType && i === messageGroup.length - 1,
+                  'bg-sky-700/75 text-white':
+                    msg.type !== senderType && msg.status === 'UNREAD',
                 }"
               >
-                {{ msg.content }}
+                {{ msg.content }} {{ msg.status }}
               </span>
             </div>
           </div>
@@ -287,6 +292,8 @@ import {
 } from '../icons'
 import { useStore } from 'vuex'
 import env from 'core/env'
+import { PAGE_SIZE } from 'core/constants'
+import { SET_MESSAGES } from '../store/types'
 
 export default defineComponent({
   name: 'Chat',
@@ -325,6 +332,8 @@ export default defineComponent({
     const inputMsg = ref('')
     const timeOut: any = ref(null)
     const isTyping = ref(false)
+    const isReadyLoadMore = ref<boolean>(false)
+    const cursor = ref('')
     const sendMessage = () => {
       if (inputMsg.value) {
         store
@@ -369,9 +378,15 @@ export default defineComponent({
         channel,
       })
     }
+    const unSubscribe = (channel: string) => {
+      emitterClient.unSubscribe({
+        key: emitterKey.value,
+        channel,
+      })
+    }
     const handleOnType = () => {
       isTyping.value = true
-      setTimeout(() => scrollToBottom(), 100)
+      // setTimeout(() => scrollToBottom(), 100)
       if (timeOut.value) {
         clearTimeout(timeOut.value)
       }
@@ -384,15 +399,15 @@ export default defineComponent({
         inputAreaRef.value.style.cssText = 'height:auto; padding:0'
         inputAreaRef.value.style.cssText =
           'height:' + inputAreaRef.value.scrollHeight + 'px'
-        if (curConversation.value)
-          emitterClient.publish({
-            key: emitterKey.value,
-            channel: `chat/typing/${curConversation.value._id}`,
-            message: JSON.stringify({
-              type: 'typing',
-              body: senderType.value,
-            }),
-          })
+        if (curConversation.value) console.log(emitterClient)
+        emitterClient.publish({
+          key: emitterKey.value,
+          channel: `chat/typing/${curConversation.value._id}`,
+          message: JSON.stringify({
+            type: 'typing',
+            body: senderType.value,
+          }),
+        })
       }
     }
     const scrollToBottom = () => {
@@ -402,6 +417,15 @@ export default defineComponent({
             chatContainerRef.value.scrollHeight),
         100,
       )
+    }
+    const loadMore = () => {
+      if (chatContainerRef.value.scrollTop === 0) {
+        getMessages(curConversation.value).then(() => {
+          if (cursor.value && chatContainerRef.value.scrollTop === 0) {
+            getMessages(curConversation.value)
+          }
+        })
+      }
     }
     const scrollToUnreadMessage = () => {
       setTimeout(
@@ -414,34 +438,60 @@ export default defineComponent({
 
     const getMessages = (conversation: Conversation) => {
       store.commit('SET_LOADING', true)
-      store
-        .dispatch('chat/actGetMessages', {
-          conversationId: conversation._id,
-        })
-        .then(() => {
+      const payload: any = {
+        conversationId: conversation._id,
+        pageSize: PAGE_SIZE,
+      }
+      let oldScrollHeight = chatContainerRef.value.scrollHeight
+      if (cursor.value) {
+        payload.cursor = cursor.value
+      }
+      return store
+        .dispatch('chat/actGetMessages', payload)
+        .then((resp: PageInfo) => {
+          const { hasNextPage, cursor: newCursor } = resp
+          isReadyLoadMore.value = hasNextPage
+          cursor.value = newCursor
           store.commit('SET_LOADING', false)
-          scrollToBottom()
+          chatContainerRef.value.scrollTop =
+            chatContainerRef.value.scrollHeight - oldScrollHeight
         })
     }
 
-    watch(curConversation, (conversation: Conversation) => {
-      console.log('fire')
-      subscribe(`chat/conversation/customer/${profile.value.id}`)
-      subscribe(`chat/message/${curConversation.value._id}`)
-      subscribe(`chat/typing/${curConversation.value._id}`)
-      getMessages(conversation)
-    })
+    watch(
+      curConversation,
+      (conversation: Conversation, oldConversation: Conversation) => {
+        if (oldConversation) {
+          store.commit(`chat/${SET_MESSAGES}`, [])
+          cursor.value = ''
+          isReadyLoadMore.value = false
+          subscribe(`chat/message/${oldConversation._id}`)
+          subscribe(`chat/typing/${oldConversation._id}`)
+        }
+        subscribe(`chat/message/${conversation._id}`)
+        subscribe(`chat/typing/${conversation._id}`)
+        getMessages(conversation).then(() => {
+          scrollToBottom()
+          if (chatContainerRef.value.scrollTop === 0) {
+            loadMore()
+          }
+        })
+      },
+    )
     onMounted(() => {
+      subscribe(`chat/conversation/customer/${profile.value.id}`)
+      console.log(emitterClient)
       scrollToBottom()
       eventHub?.on('onTyping', () => {
         handleOnType()
       })
       eventHub?.on('onMsgCome', (msg: Message) => {
-        console.log(msg)
-        scrollToBottom()
         if (msg.type !== senderType.value) {
           isTyping.value = false
         }
+      })
+      chatContainerRef.value.addEventListener('scroll', () => {
+        if (cursor.value) loadMore()
       })
     })
 

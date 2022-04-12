@@ -23,8 +23,9 @@ export const actions: ActionTree<ChatState, RootState> = {
     })
   },
   actGetMessages({ commit }, params: { [key: string]: any }) {
-    return service.getMessages(params).then((resp: any) => {
-      commit(SET_MESSAGES, resp?.results)
+    return service.getMessages(params).then((resp: PagingResponse) => {
+      if (resp?.results.length > 0) commit(SET_MESSAGES, resp?.results)
+      return resp.pageInfo
     })
   },
   actSendMessage({ commit }, params: { [key: string]: any }) {

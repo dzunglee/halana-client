@@ -10,6 +10,7 @@ import {
   SET_RECEIVER_ID,
   SET_SENDER_ID,
   SET_SIDEBAR,
+  TOGGLE_SIDEBAR,
 } from './types'
 
 export const mutations: MutationTree<ChatState> = {
@@ -26,7 +27,8 @@ export const mutations: MutationTree<ChatState> = {
     state.curConversation = conversation
   },
   [SET_MESSAGES](state: ChatState, messages: Message[]) {
-    state.messages = messages
+    if (messages.length > 0) state.messages = [...messages, ...state.messages]
+    else state.messages = messages
   },
   [SET_SENDER_ID](state: ChatState, id: number) {
     state.senderId = id
@@ -45,5 +47,8 @@ export const mutations: MutationTree<ChatState> = {
   },
   [ADD_CONVERSATION](state: ChatState, conversation: Conversation) {
     state.conversations?.unshift(conversation)
+  },
+  [TOGGLE_SIDEBAR](state: ChatState) {
+    state.isOpenSidebar = !state.isOpenSidebar
   },
 }
