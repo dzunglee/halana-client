@@ -103,7 +103,7 @@ export default defineComponent({
     // settings
     const senderType = computed<string>(() => store.state.chat.senderType)
     const sidebarOpen = computed(() => store.getters['chat/isOpenSidebar'])
-    const dialogOpen = ref(true)
+    const dialogOpen = ref<boolean>(true)
     const isDialog = ref(false)
 
     //
@@ -116,9 +116,7 @@ export default defineComponent({
         if (msg.conversationId === curConversation.value._id) {
           store.commit(`chat/${ADD_MESSAGE}`, msg)
         }
-        if (msg.type !== senderType.value) {
-          eventHub?.emit('onMsgCome')
-        }
+        eventHub?.emit('onMsgCome', msg)
       },
       typing(type: string) {
         if (type !== senderType.value) {

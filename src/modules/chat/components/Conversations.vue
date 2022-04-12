@@ -107,6 +107,7 @@ export default defineComponent({
     const emitterKey = computed<string>(() => store.state.chat.emitterKey)
     const senderType = computed<string>(() => store.state.chat.senderType)
     const receiverId = computed<number>(() => store.state.chat.receiverId)
+    const senderId = computed<number>(() => store.state.chat.senderId)
     // settings
     const sidebarOpen = computed(() => store.getters['chat/isOpenSidebar'])
     //
@@ -124,7 +125,7 @@ export default defineComponent({
           if (senderType.value === 'customer') {
             return item.channelId === receiverId.value
           }
-          return item.channelId === receiverId.value
+          return item.channelId === senderId.value
         })
         if (cur) {
           store.commit(`chat/${SET_CURRENT_CONVERSATION}`, cur)

@@ -128,6 +128,15 @@
           />
         </div>
       </div>
+      <div ref="unReadMessage" class="flex">
+        <div class="flex-1 flex items-center">
+          <p class="m-0 border-t flex-1"></p>
+        </div>
+        <div class="flex px-3 text-sm text-gray-600">12/03/2022</div>
+        <div class="flex-1 flex items-center">
+          <p class="m-0 border-t flex-1"></p>
+        </div>
+      </div>
       <div
         ref="typingRef"
         class="items-end justify-start transition-all duration-200"
@@ -303,57 +312,6 @@ export default defineComponent({
       () => store.state.chat.curConversation,
     )
     const messages = computed<Message[]>(() => store.state.chat.messages)
-    // const messages = ref<Message[]>([
-    //   {
-    //     content: 'Can be verified on any platform using docker',
-    //     type: 'supplier',
-    //     createdAt: '10:34 16/12/2021',
-    //   },
-    //   {
-    //     content:
-    //       'Your error message says permission denied, npm global installs must be given root privileges.',
-    //     type: 'customer',
-    //     createdAt: '10:34 16/12/2021',
-    //   },
-    //   {
-    //     content: "Command was run with root privileges. I'm sure about that.",
-    //     type: 'supplier',
-    //     createdAt: '10:34 16/12/2021',
-    //   },
-    //   {
-    //     content: "I've update the description so it's more obviously now",
-    //     type: 'supplier',
-    //     createdAt: '10:34 16/12/2021',
-    //   },
-    //   {
-    //     content: 'FYI https://askubuntu.com/a/700266/510172',
-    //     type: 'supplier',
-    //     createdAt: '10:34 16/12/2021',
-    //   },
-    //   {
-    //     content:
-    //       "Check the line above (it ends with a # so, I'm running it as root )# npm install -g @vue/devtools",
-    //     type: 'supplier',
-    //     createdAt: '10:34 16/12/2021',
-    //   },
-    //   {
-    //     content:
-    //       "Any updates on this issue? I'm getting the same error when trying to install devtools. Thanks",
-    //     type: 'customer',
-    //     createdAt: '10:34 16/12/2021',
-    //   },
-    //   {
-    //     content: 'Are you using sudo?',
-    //     type: 'supplier',
-    //     createdAt: '10:34 16/12/2021',
-    //   },
-    //   {
-    //     content:
-    //       "Thanks for your message David. I thought I'm alone with this issue. Please, 👍 the issue to support it :)",
-    //     type: 'customer',
-    //     createdAt: '10:34 16/12/2021',
-    //   },
-    // ])
 
     // settings
     const emitterKey = computed<string>(() => store.state.chat.emitterKey)
@@ -438,7 +396,20 @@ export default defineComponent({
       }
     }
     const scrollToBottom = () => {
-      chatContainerRef.value.scrollTop = chatContainerRef.value.scrollHeight
+      setTimeout(
+        () =>
+          (chatContainerRef.value.scrollTop =
+            chatContainerRef.value.scrollHeight),
+        100,
+      )
+    }
+    const scrollToUnreadMessage = () => {
+      setTimeout(
+        () =>
+          (chatContainerRef.value.scrollTop =
+            chatContainerRef.value.scrollHeight),
+        100,
+      )
     }
 
     const getMessages = (conversation: Conversation) => {
@@ -447,7 +418,10 @@ export default defineComponent({
         .dispatch('chat/actGetMessages', {
           conversationId: conversation._id,
         })
-        .then(() => store.commit('SET_LOADING', false))
+        .then(() => {
+          store.commit('SET_LOADING', false)
+          scrollToBottom()
+        })
     }
 
     watch(curConversation, (conversation: Conversation) => {
@@ -462,28 +436,13 @@ export default defineComponent({
       eventHub?.on('onTyping', () => {
         handleOnType()
       })
-      eventHub?.on('onMsgCome', () => {
-        isTyping.value = false
+      eventHub?.on('onMsgCome', (msg: Message) => {
+        console.log(msg)
+        scrollToBottom()
+        if (msg.type !== senderType.value) {
+          isTyping.value = false
+        }
       })
-      // emitterClient.on('message', (msg: any) => {
-      //   console.log(JSON.parse(msg.asString()))
-      //   const res = JSON.parse(msg.asString())
-      //   switch (res.messageType) {
-      //     case 'newMessage':
-      //       messages.value.push(res)
-      //       setTimeout(() => scrollToBottom())
-      //       break
-      //     case 'typing':
-      //       handleOnType()
-      //       break
-      //     case 'maskRead':
-      //       break
-      //     case 'newConversation':
-      //       break
-      //     case 'delConversation':
-      //       break
-      //   }
-      // })
     })
 
     onBeforeMount(() => {})
