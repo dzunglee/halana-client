@@ -46,7 +46,7 @@
             </span>
             <span
               v-if="
-                item.latestMessage?.seenAt &&
+                item.latestMessage?.status === 'READ' &&
                 item.latestMessage?.type !== senderType
               "
             >
@@ -135,7 +135,6 @@ export default defineComponent({
         store.commit('SET_LOADING', false)
       })
     }
-
     const createConversation = () => {
       store.commit('SET_LOADING', true)
       store
@@ -147,16 +146,12 @@ export default defineComponent({
           store.commit('SET_LOADING', false)
         })
     }
-
     const handleSelectConversation = (item: Conversation) => {
       store.commit(`chat/${SET_CURRENT_CONVERSATION}`, item)
     }
 
-    watch(curConversation, (conversation: Conversation) => {
-      subscribe(`chat/message/${conversation._id}`)
-    })
-
     onMounted(() => {
+      subscribe(`chat/message/`)
       subscribe(`chat/conversation/customer/${profile.value.id}`)
     })
 

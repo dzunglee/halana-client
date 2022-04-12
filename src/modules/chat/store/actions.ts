@@ -34,4 +34,7 @@ export const actions: ActionTree<ChatState, RootState> = {
   actCreateConversations({ commit }, params: { [key: string]: any }) {
     return service.createConversation(params)
   },
+  actReadMessage({ commit }, params: { [key: string]: any }) {
+    return service.readMessages(params)
+  },
 }

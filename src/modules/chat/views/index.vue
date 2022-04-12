@@ -71,8 +71,8 @@ import { useStore } from 'vuex'
 import {
   ADD_CONVERSATION,
   ADD_MESSAGE,
+  READ_MESSAGE,
   SET_RECEIVER_ID,
-  SET_SENDER_ID,
   SET_SIDEBAR,
   TOGGLE_SIDEBAR,
 } from '../store/types'
@@ -126,6 +126,9 @@ export default defineComponent({
       },
       newConversation(conversation: Conversation) {
         store.commit(`chat/${ADD_CONVERSATION}`, conversation)
+      },
+      maskRead(message: Message) {
+        store.commit(`chat/${READ_MESSAGE}`, message)
       },
     }
 

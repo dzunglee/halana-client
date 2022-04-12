@@ -82,6 +82,9 @@
       ref="chatContainerRef"
       class="flex flex-1 flex-col space-y-4 p-3 overflow-x-hidden overflow-y-auto scrollbar-thumb-blue scrollbar-thumb-rounded scrollbar-track-blue-lighter scrollbar-w-2 scrolling-touch"
     >
+      <div class="flex items-center justify-center text-sm" v-if="loadingMsg">
+        <em class="inline-block w-7 h-7"> <LoadingSvgIcon /> </em>Loading
+      </div>
       <div
         class="chat-message"
         v-for="(messageGroup, index) in messageGroups"
@@ -100,9 +103,23 @@
               'order-1 ': messageGroup[0].type === senderType,
             }"
           >
-            <div v-for="(msg, i) in messageGroup" :key="i">
+            <div
+              class="flex"
+              v-for="(msg, i) in messageGroup"
+              :key="i"
+              :class="{
+                unRead: msg.status === 'UNREAD' && msg.type !== senderType,
+              }"
+              :id="msg._id"
+            >
               <span
-                class="px-4 py-2 rounded-lg inline-block"
+                v-if="msg.type === senderType"
+                class="text-sm mx-1 flex items-center"
+              >
+                <span>{{ formatDate(msg.createdAt) }}</span>
+              </span>
+              <span
+                class="px-4 py-2 rounded-lg inline-block transition duration-100"
                 :class="{
                   'bg-gray-300 text-gray-600': msg.type !== senderType,
                   'bg-violet-600 text-white': msg.type === senderType,
@@ -115,6 +132,13 @@
                 }"
               >
                 {{ msg.content }} {{ msg.status }}
+              </span>
+              <span
+                v-if="msg.type !== senderType"
+                class="text-sm mx-1 flex items-center"
+              >
+                <span>{{ formatDate(msg.createdAt) }}</span>
+                <TickSvgIcon v-if="msg.status === 'READ'" class="ml-1" />
               </span>
             </div>
           </div>
@@ -131,15 +155,6 @@
               'order-2 ': messageGroup[0].type === senderType,
             }"
           />
-        </div>
-      </div>
-      <div ref="unReadMessage" class="flex">
-        <div class="flex-1 flex items-center">
-          <p class="m-0 border-t flex-1"></p>
-        </div>
-        <div class="flex px-3 text-sm text-gray-600">12/03/2022</div>
-        <div class="flex-1 flex items-center">
-          <p class="m-0 border-t flex-1"></p>
         </div>
       </div>
       <div
@@ -289,11 +304,13 @@ import {
   SendSvgIcon,
   TickSvgIcon,
   MessengerSvgIcon,
+  LoadingSvgIcon,
 } from '../icons'
 import { useStore } from 'vuex'
 import env from 'core/env'
 import { PAGE_SIZE } from 'core/constants'
 import { SET_MESSAGES } from '../store/types'
+import dayjs from 'dayjs'
 
 export default defineComponent({
   name: 'Chat',
@@ -305,6 +322,7 @@ export default defineComponent({
     SendSvgIcon,
     TickSvgIcon,
     MessengerSvgIcon,
+    LoadingSvgIcon,
   },
   setup() {
     const emitterClient = inject<any>('emitterClient')
@@ -327,6 +345,7 @@ export default defineComponent({
     const avatar = computed(
       () => `${env('VITE_PROFILE_IMAGE_ENDPOINT')}/${profile.value.avatar}`,
     )
+    const loadingMsg = ref(false)
     const dialogOpen = ref(true)
     const isDialog = ref(false)
     const inputMsg = ref('')
@@ -399,15 +418,16 @@ export default defineComponent({
         inputAreaRef.value.style.cssText = 'height:auto; padding:0'
         inputAreaRef.value.style.cssText =
           'height:' + inputAreaRef.value.scrollHeight + 'px'
-        if (curConversation.value) console.log(emitterClient)
-        emitterClient.publish({
-          key: emitterKey.value,
-          channel: `chat/typing/${curConversation.value._id}`,
-          message: JSON.stringify({
-            type: 'typing',
-            body: senderType.value,
-          }),
-        })
+        if (curConversation.value) {
+          emitterClient.publish({
+            key: emitterKey.value,
+            channel: `chat/typing/${curConversation.value._id}`,
+            message: JSON.stringify({
+              type: 'typing',
+              body: senderType.value,
+            }),
+          })
+        }
       }
     }
     const scrollToBottom = () => {
@@ -437,7 +457,7 @@ export default defineComponent({
     }
 
     const getMessages = (conversation: Conversation) => {
-      store.commit('SET_LOADING', true)
+      loadingMsg.value = true
       const payload: any = {
         conversationId: conversation._id,
         pageSize: PAGE_SIZE,
@@ -452,10 +472,41 @@ export default defineComponent({
           const { hasNextPage, cursor: newCursor } = resp
           isReadyLoadMore.value = hasNextPage
           cursor.value = newCursor
-          store.commit('SET_LOADING', false)
+          loadingMsg.value = false
           chatContainerRef.value.scrollTop =
             chatContainerRef.value.scrollHeight - oldScrollHeight
         })
+    }
+
+    const readMessage = (_id: string) => {
+      store.dispatch('chat/actReadMessage', {
+        conversationId: curConversation.value._id,
+        _id,
+      })
+    }
+
+    const readMessages = () => {
+      const start = chatContainerRef.value.scrollTop
+      const end = start + chatContainerRef.value.clientHeight
+      const unReadList = Array.prototype.slice.call(
+        document.getElementsByClassName('unRead'),
+      )
+      unReadList.forEach((msg: any) => {
+        if (!msg.classList.contains('read')) {
+          const itemPosition = msg.offsetTop,
+            itemId = msg.getAttribute('id')
+          console.log(start, itemPosition, end)
+          if (start <= itemPosition && end >= itemPosition) {
+            console.log(msg)
+            msg.classList.add('read')
+            readMessage(itemId)
+          }
+        }
+      })
+    }
+
+    const formatDate = (date: Date) => {
+      return dayjs(date).format('hh:mm')
     }
 
     watch(
@@ -465,10 +516,8 @@ export default defineComponent({
           store.commit(`chat/${SET_MESSAGES}`, [])
           cursor.value = ''
           isReadyLoadMore.value = false
-          subscribe(`chat/message/${oldConversation._id}`)
-          subscribe(`chat/typing/${oldConversation._id}`)
+          unSubscribe(`chat/typing/${oldConversation._id}`)
         }
-        subscribe(`chat/message/${conversation._id}`)
         subscribe(`chat/typing/${conversation._id}`)
         getMessages(conversation).then(() => {
           scrollToBottom()
@@ -480,7 +529,6 @@ export default defineComponent({
     )
     onMounted(() => {
       subscribe(`chat/conversation/customer/${profile.value.id}`)
-      console.log(emitterClient)
       scrollToBottom()
       eventHub?.on('onTyping', () => {
         handleOnType()
@@ -492,6 +540,7 @@ export default defineComponent({
       })
       chatContainerRef.value.addEventListener('scroll', () => {
         if (cursor.value) loadMore()
+        readMessages()
       })
     })
 
@@ -511,9 +560,11 @@ export default defineComponent({
       isTyping,
       profile,
       avatar,
+      loadingMsg,
       handleOnType,
       onKeyup,
       sendMessage,
+      formatDate,
     }
   },
 })

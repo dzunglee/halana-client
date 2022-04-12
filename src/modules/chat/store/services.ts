@@ -17,4 +17,7 @@ export class ChatService extends Service {
   public createConversation(params: { [key: string]: any }) {
     return this.post('conversations', params)
   }
+  public readMessages(params: { [key: string]: any }) {
+    return this.put('messages/mask-read', params)
+  }
 }

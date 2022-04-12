@@ -39,6 +39,7 @@ interface RouterAbility {
 }
 
 interface Message {
+  _id?: string
   conversationId: string
   content?: string
   status?: 'READ' | 'UNREAD'

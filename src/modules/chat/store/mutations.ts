@@ -3,6 +3,7 @@ import {
   ADD_CONVERSATION,
   ADD_MESSAGE,
   ChatState,
+  READ_MESSAGE,
   SET_AUTH,
   SET_CONVERSATION,
   SET_CURRENT_CONVERSATION,
@@ -50,5 +51,25 @@ export const mutations: MutationTree<ChatState> = {
   },
   [TOGGLE_SIDEBAR](state: ChatState) {
     state.isOpenSidebar = !state.isOpenSidebar
+  },
+  [READ_MESSAGE](state: ChatState, message: Message) {
+    if (
+      state?.curConversation &&
+      message.conversationId === state.curConversation._id
+    ) {
+      state.messages.forEach((i) => {
+        if (i._id === message._id) {
+          i.status = 'READ'
+        }
+      })
+    }
+    state.conversations?.forEach((c) => {
+      if (c._id === message._id) {
+        if (c.unreadCount && c.unreadCount > 0) c.unreadCount -= 1
+        if (c.latestMessage && c.latestMessage._id === message._id) {
+          c.latestMessage.status = 'READ'
+        }
+      }
+    })
   },
 }
