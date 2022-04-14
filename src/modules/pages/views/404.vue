@@ -23,44 +23,12 @@
           <p class="mt-2 text-base text-gray-500">
             Sorry, we couldn’t find the page you’re looking for.
           </p>
-          <div class="mt-6">
-            <router-link
-              to="/"
-              class="text-base font-medium text-indigo-600 hover:text-indigo-500"
-            >
-              Go back home<span aria-hidden="true"> &rarr;</span>
-            </router-link>
-          </div>
         </div>
       </div>
     </main>
-    <footer class="flex-shrink-0 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
-      <nav class="flex justify-center space-x-4">
-        <a
-          href="#"
-          class="text-sm font-medium text-gray-500 hover:text-gray-600"
-          >Contact Support</a
-        >
-        <span
-          class="inline-block border-l border-gray-300"
-          aria-hidden="true"
-        />
-        <a
-          href="#"
-          class="text-sm font-medium text-gray-500 hover:text-gray-600"
-          >Status</a
-        >
-        <span
-          class="inline-block border-l border-gray-300"
-          aria-hidden="true"
-        />
-        <a
-          href="#"
-          class="text-sm font-medium text-gray-500 hover:text-gray-600"
-          >LTV.VN</a
-        >
-      </nav>
-    </footer>
+    <footer
+      class="flex-shrink-0 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8"
+    ></footer>
   </div>
 </template>
 

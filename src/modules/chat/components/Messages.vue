@@ -1,23 +1,30 @@
 <template>
   <div
-    class="justify-between flex flex-col border-l"
+    class="justify-between flex flex-1 flex-col transition-all duration-200"
     :class="{
-      'opacity-1 w-80': sidebarOpen,
-      'opacity-0 w-0': !sidebarOpen,
+      'opacity-1 border-l ': sidebarOpen,
+      'opacity-0 flex none': !sidebarOpen,
     }"
   >
     <div
-      class="flex flex-col sm:flex-row items-center justify-between py-0 border-b-2 border-gray-200"
+      v-if="curConversation"
+      class="flex flex-col sm:flex-row items-center justify-between py-0 border-b-2 border-gray-200 w-full"
     >
       <div class="flex items-center p-2">
         <img
-          src="https://images.unsplash.com/photo-1549078642-b2ba4bda0cdb?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=facearea&amp;facepad=3&amp;w=144&amp;h=144"
+          v-if="curConversation.profile?.img"
+          :src="curConversation.profile.img"
           alt=""
           class="w-4 sm:w-6 h-4 sm:h-6 rounded-full"
         />
+        <em v-else class="w-4 sm:w-6 h-4 sm:h-6 rounded-full"
+          ><DefaultUserSvgIcon
+        /></em>
         <div class="flex flex-col leading-tight">
           <div class="text-md mt-1 ml-3 flex items-center">
-            <span class="text-gray-700 mr-3">Anderson Vanhron</span>
+            <span class="text-gray-700 mr-3 truncate">{{
+              curConversation.profile?.name || 'Anonymous'
+            }}</span>
             <span v-if="isTyping"><Typing /></span>
           </div>
         </div>
@@ -68,7 +75,7 @@
                 class="px-4 py-2 rounded-lg inline-block transition duration-100"
                 :class="{
                   'bg-gray-300 text-gray-600': msg.type !== senderType,
-                  'bg-violet-600 text-white': msg.type === senderType,
+                  'bg-sky-600 text-white': msg.type === senderType,
                   'rounded-bl-none bg-gray-300 text-gray-600':
                     msg.type !== senderType && i === messageGroup.length - 1,
                   'rounded-br-none':
@@ -87,19 +94,6 @@
               </span>
             </div>
           </div>
-          <img
-            :src="
-              senderType === messageGroup[0].type
-                ? avatar
-                : 'https://images.unsplash.com/photo-1549078642-b2ba4bda0cdb?ixlib=rb-1.2.1&amp;ixid=eyJhcHBfaWQiOjEyMDd9&amp;auto=format&amp;fit=facearea&amp;facepad=3&amp;w=144&amp;h=144'
-            "
-            alt="My profile"
-            class="w-6 h-6 rounded-full text-sm"
-            :class="{
-              'order-1': messageGroup[0].type !== senderType,
-              'order-2 ': messageGroup[0].type === senderType,
-            }"
-          />
         </div>
       </div>
     </div>
@@ -119,7 +113,7 @@
         <div class="right-0 items-center inset-y-0 flex gap-2">
           <button
             type="button"
-            class="mt-auto inline-flex items-center justify-center rounded-full h-6 w-6 transition duration-500 ease-in-out text-white bg-violet-600 hover:bg-blue-400 focus:outline-none"
+            class="mt-auto inline-flex items-center justify-center rounded-full h-6 w-6 transition duration-500 ease-in-out text-white bg-sky-600 hover:bg-blue-400 focus:outline-none"
             @click="sendMessage"
           >
             <SendSvgIcon />
@@ -151,6 +145,7 @@ import {
   MessengerSvgIcon,
   LoadingSvgIcon,
   Typing,
+  DefaultUserSvgIcon,
 } from '../icons'
 import { useStore } from 'vuex'
 import env from 'core/env'
@@ -169,6 +164,7 @@ export default defineComponent({
     TickSvgIcon,
     MessengerSvgIcon,
     LoadingSvgIcon,
+    DefaultUserSvgIcon,
     Typing,
   },
   setup() {
@@ -187,7 +183,7 @@ export default defineComponent({
     // settings
     const emitterKey = computed<string>(() => store.state.chat.emitterKey)
     const senderType = computed<string>(() => store.state.chat.senderType)
-    const sidebarOpen = ref(true)
+    const sidebarOpen = computed<string>(() => store.state.chat.isOpenSidebar)
     const avatar = computed(
       () => `${env('VITE_PROFILE_IMAGE_ENDPOINT')}/${profile.value.avatar}`,
     )
@@ -275,7 +271,9 @@ export default defineComponent({
     }
     const scrollToBottom = () => {
       nextTick(() => {
-        chatContainerRef.value.scrollTop = chatContainerRef.value.scrollHeight
+        setTimeout(() => {
+          chatContainerRef.value.scrollTop = chatContainerRef.value.scrollHeight
+        }, 300)
       })
     }
     const loadMore = () => {
@@ -295,7 +293,6 @@ export default defineComponent({
         100,
       )
     }
-
     const getMessages = (conversation: Conversation) => {
       loadingMsg.value = true
       const payload: any = {
@@ -317,7 +314,6 @@ export default defineComponent({
             chatContainerRef.value.scrollHeight - oldScrollHeight
         })
     }
-
     const readMessage = (_id: string) => {
       store.dispatch('chat/actReadMessage', {
         conversationId: curConversation.value._id,
@@ -342,11 +338,9 @@ export default defineComponent({
         }
       })
     }
-
     const formatDate = (date: Date) => {
       return dayjs(date).format('hh:mm')
     }
-
     watch(
       curConversation,
       (conversation: Conversation, oldConversation: Conversation) => {
@@ -362,6 +356,7 @@ export default defineComponent({
           if (chatContainerRef.value.scrollTop === 0) {
             loadMore()
           }
+          chatContainerRef.value.dispatchEvent(new Event('scroll'))
         })
       },
     )
@@ -381,12 +376,7 @@ export default defineComponent({
         if (cursor.value) loadMore()
         readMessages()
       })
-      window.addEventListener('resize', () => {
-        sidebarOpen.value = window.innerWidth >= 640
-      })
     })
-
-    onBeforeMount(() => {})
 
     return {
       senderType,

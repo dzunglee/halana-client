@@ -9,7 +9,9 @@
           >
             <router-view v-slot="{ Component }">
               <component :is="Component" v-if="isAuthenticated" />
-              <div class="p-3" v-else>Unauthenticated</div>
+              <div class="p-3" v-if="!isAuthenticated && !loading">
+                Unauthenticated
+              </div>
             </router-view>
           </section>
         </div>
@@ -19,8 +21,9 @@
 </template>
 
 <script lang="ts">
+import { SET_AUTH } from 'modules/chat/store/types'
 import { RootState } from 'store/index'
-import { computed, defineComponent, onBeforeMount } from 'vue'
+import { computed, defineComponent, inject, onBeforeMount } from 'vue'
 import { useStore } from 'vuex'
 
 export default defineComponent({
@@ -29,15 +32,20 @@ export default defineComponent({
 
   setup() {
     const store = useStore<RootState>()
+    const $message = inject<IMessage>('$message')
     const loading = computed(() => store.state.loading)
     const isAuthenticated = computed(
       () => store.getters['chat/isAuthenticated'],
     )
     onBeforeMount(() => {
-      store.commit('SET_LOADING', true)
-      store.dispatch('chat/actGetMe').then(() => {
-        store.commit('SET_LOADING', false)
-      })
+      store
+        .dispatch('chat/actGetMe')
+        .catch((error: Error) => {
+          $message?.error(`Unauthenticated: ${error?.message}`)
+        })
+        .finally(() => {
+          store.commit('SET_LOADING', false)
+        })
     })
     return {
       store,

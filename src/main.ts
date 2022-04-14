@@ -7,12 +7,13 @@ import AppComponents from './components'
 import './index.css'
 import router from './router'
 import store from './store'
+import env from 'core/env'
 
 //@ts-ignore
 const client = emitter.connect({
   secret: true,
-  host: 'emitter.hichat.io',
-  port: 8080,
+  host: env('VITE_EMITTER_ENPOINT'),
+  port: env('VITE_EMITTER_PORT'),
 })
 
 // create new app instance

@@ -1,31 +1,7 @@
 <template>
   <div class="rounded block h-full w-160">
     <div class="relative flex flex-col w-full h-full">
-      <div
-        class="relative flex shadow-[0_2px_4px_0_rgba(0,0,0,0.3)] p-2 pl-3 bg-violet-600 text-white"
-      >
-        <div
-          class="flex-1 flex items-center"
-          @click="dialogOpen = true"
-          :class="{ 'cursor-pointer': !dialogOpen }"
-        >
-          <em class="inline-block">
-            <MessengerSvgIcon />
-          </em>
-          Chat
-        </div>
-        <div class="flex items-center" v-if="dialogOpen">
-          <button
-            v-if="isDialog"
-            type="button"
-            class="inline-flex items-center justify-center h-6 w-6 transition duration-500 ease-in-out text-gray-500 hover:bg-gray-300 focus:outline-none"
-            @click="dialogOpen = !dialogOpen"
-          >
-            <CloseChatSvgIcon />
-          </button>
-        </div>
-      </div>
-      <div class="flex flex-1 overflow-hidden">
+      <div class="flex flex-1 overflow-hidden justify-end">
         <Messages />
         <Conversations />
       </div>
@@ -39,6 +15,7 @@ import {
   defineComponent,
   inject,
   onBeforeMount,
+  onBeforeUnmount,
   onMounted,
   ref,
 } from 'vue'
@@ -119,39 +96,35 @@ export default defineComponent({
     }
 
     onMounted(() => {
-      onMessageFunc['newConversation']({
-        sk: '20ea821accae337420cb66a755e46080',
-        channelId: 813,
-        customerId: 144,
-        messages: [],
-        requiredOrder: false,
-        delFlg: false,
-        listOrders: [],
-        _id: '625641d57cd7ec66db65c021',
-        createdAt: '2022-04-13T03:21:57.925Z',
-        updatedAt: '2022-04-13T03:21:57.925Z',
-        __v: 0,
-      })
       emitterClient.on('message', (msg: any) => {
         const res = JSON.parse(msg.asString())
         onMessageFunc[res.type](res.body)
         console.log(JSON.parse(msg.asString()))
       })
       window.onmessage = function (e) {
-        if (e.data == 'hello') {
-          alert('It works!')
+        if (e.data == 'openSidebar') {
+          store.commit(`chat/${SET_SIDEBAR}`, true)
+        }
+        if (e.data == 'closeSidebar') {
+          store.commit(`chat/${SET_SIDEBAR}`, false)
         }
       }
+    })
+
+    onBeforeUnmount(() => {
+      window.removeEventListener('message', () => {})
     })
 
     onBeforeMount(() => {
       const { sidebar } = route.query
       const { cId } = route.params
-      const ids = cId.toString().split(':')
-      if (ids.length === 2) {
-        store.commit(`chat/${SET_RECEIVER_ID}`, parseInt(ids[1]))
-      }
-      store.commit(`chat/${SET_SIDEBAR}`, !!sidebar)
+      try {
+        const ids = window.atob(cId.toString()).split(':')
+        if (ids.length === 2) {
+          store.commit(`chat/${SET_RECEIVER_ID}`, parseInt(ids[1]))
+        }
+        store.commit(`chat/${SET_SIDEBAR}`, !!sidebar)
+      } catch (e) {}
     })
 
     return {

@@ -48,6 +48,11 @@ interface Message {
   type?: 'customer' | 'supplier'
 }
 
+interface Profile {
+  img: string
+  name: string
+}
+
 interface Conversation {
   _id: string
   sk?: string
@@ -55,6 +60,9 @@ interface Conversation {
   customerId?: number
   unreadCount?: number
   latestMessage?: Message
+  supplierProfile?: Profile
+  customerProfile?: Profile
+  profile?: Profile
 }
 
 interface Profile {

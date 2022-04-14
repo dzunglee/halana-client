@@ -1,6 +1,9 @@
 <template>
-  <div class="flex flex-col px-0 bg-gray-100 shadow-inner overflow-hidden w-80">
-    <div class="relative mt-2 flex mb-2 px-2">
+  <div
+    id="conversations"
+    class="flex flex-col px-0 bg-gray-100 shadow-inner overflow-hidden w-80"
+  >
+    <!-- <div class="relative mt-2 flex mb-2 px-2">
       <span class="absolute inset-y-0 pl-4 flex items-center">
         <SearchSvgIcon /> </span
       ><input
@@ -8,7 +11,7 @@
         placeholder="Search"
         class="py-2 pl-10 rounded text-xs w-full placeholder-gray-400"
       />
-    </div>
+    </div> -->
     <div class="space-y- overflow-auto">
       <div
         class="flex items-center p-3 cursor-pointer"
@@ -21,31 +24,38 @@
         @click="handleSelectConversation(item)"
       >
         <img
-          src="https://images.unsplash.com/photo-1549078642-b2ba4bda0cdb?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=3&w=144&h=144"
+          v-if="item.profile?.img"
+          :src="item.profile.img || ''"
           alt="A"
           class="w-10 h-10 rounded-full"
         />
+        <em v-else class="w-10 h-10 p-1 rounded-full"
+          ><DefaultUserSvgIcon
+        /></em>
         <div class="flex flex-1 flex-col leading-tight pl-3">
           <div class="flex items-center justify-between">
             <span
               class="text-sm font-semibold text-slate-700 block w-48 truncate"
-              >Conversation {{ item.sk }}</span
-            ><span class="text-xs text-slate-500 block w-14">10:34 PM</span>
+              >{{ item.profile?.name || 'Anonymous' }}</span
+            >
+            <span class="text-xs text-slate-500 block w-10 truncate">
+              {{ item.latestMessage?.createdAt }}
+            </span>
           </div>
           <div class="flex items-center justify-between">
             <span class="text-xs text-gray-600">
-              {{ item?.latestMessage?.content }}
+              {{ item.latestMessage?.content }}
             </span>
             <span
               v-if="item.unreadCount && item.unreadCount > 0"
-              class="px-2 inline-flex items-center justify-center w-4 h-4 rounded-full bg-violet-600 text-white text-xxs"
+              class="px-2 inline-flex items-center justify-center w-4 h-4 rounded-full bg-sky-600 text-white text-xxs"
             >
               {{ item.unreadCount }}
             </span>
             <span
               v-if="
                 item.latestMessage?.status === 'READ' &&
-                item.latestMessage?.type !== senderType
+                item.latestMessage?.type === senderType
               "
             >
               <TickSvgIcon />
@@ -63,8 +73,6 @@ import {
   inject,
   onBeforeMount,
   onMounted,
-  watch,
-  ref,
 } from 'vue'
 import {
   CloseChatSvgIcon,
@@ -74,6 +82,7 @@ import {
   SendSvgIcon,
   TickSvgIcon,
   MessengerSvgIcon,
+  DefaultUserSvgIcon,
 } from '../icons'
 import { useRoute } from 'vue-router'
 import { useStore } from 'vuex'
@@ -90,10 +99,11 @@ export default defineComponent({
     SendSvgIcon,
     TickSvgIcon,
     MessengerSvgIcon,
+    DefaultUserSvgIcon,
   },
   setup() {
     const emitterClient = inject<any>('emitterClient')
-    const eventHub = inject<any>('eventHub')
+    const $message = inject<IMessage>('$message')
     const store = useStore()
     const route = useRoute()
     // data
@@ -119,20 +129,27 @@ export default defineComponent({
     }
     const getConversations = () => {
       store.commit('SET_LOADING', true)
-      store.dispatch('chat/actGetConversations').then(() => {
-        const cur = conversations.value.find((item) => {
-          if (senderType.value === 'customer') {
-            return item.channelId === receiverId.value
+      store
+        .dispatch('chat/actGetConversations')
+        .then(() => {
+          const cur = conversations.value.find((item) => {
+            if (senderType.value === 'customer') {
+              return item.channelId === receiverId.value
+            }
+            return item.channelId === senderId.value
+          })
+          if (cur) {
+            store.commit(`chat/${SET_CURRENT_CONVERSATION}`, cur)
+          } else if (senderType.value === 'customer') {
+            createConversation()
           }
-          return item.channelId === senderId.value
         })
-        if (cur) {
-          store.commit(`chat/${SET_CURRENT_CONVERSATION}`, cur)
-        } else if (senderType.value === 'customer') {
-          createConversation()
-        }
-        store.commit('SET_LOADING', false)
-      })
+        .catch((error: Error) => {
+          $message?.error(`Can not load conversations: ${error?.message}`)
+        })
+        .finally(() => {
+          store.commit('SET_LOADING', false)
+        })
     }
     const createConversation = () => {
       const { name, avatar } = route.query
@@ -148,11 +165,17 @@ export default defineComponent({
           })
           .then((resp: Conversation) => {
             store.commit(`chat/${SET_CURRENT_CONVERSATION}`, resp)
+          })
+          .catch((error: Error) => {
+            $message?.error(`Can not create conversation: ${error?.message}`)
+          })
+          .finally(() => {
             store.commit('SET_LOADING', false)
           })
       }
     }
     const handleSelectConversation = (item: Conversation) => {
+      window.top?.postMessage('openSidebar', '*')
       store.commit(`chat/${SET_CURRENT_CONVERSATION}`, item)
     }
 
@@ -177,7 +200,7 @@ export default defineComponent({
 })
 </script>
 <style scoped>
-textarea:focus {
-  box-shadow: none !important;
+#conversations {
+  flex: 0 0 20rem;
 }
 </style>

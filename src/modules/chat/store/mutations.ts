@@ -1,4 +1,6 @@
+import env from 'core/env'
 import { MutationTree } from 'vuex'
+import dayjs from 'dayjs'
 import {
   ADD_CONVERSATION,
   ADD_MESSAGE,
@@ -14,6 +16,23 @@ import {
   TOGGLE_SIDEBAR,
 } from './types'
 
+const cndEndpoint = env('VITE_CND_ENDPOINT')
+
+const transformConversation = (c: Conversation, senderType: string) => {
+  if (!c.profile) {
+    if (senderType === 'customer') {
+      c.profile = c.supplierProfile
+    } else {
+      c.profile = c.customerProfile
+    }
+    if (c.profile) c.profile.img = `${cndEndpoint}/${c.profile?.img}`
+    if (c.latestMessage)
+      c.latestMessage.createdAt = dayjs(c.latestMessage.createdAt).format(
+        'hh:mm',
+      )
+  }
+}
+
 export const mutations: MutationTree<ChatState> = {
   [SET_AUTH](state: ChatState, user: Profile) {
     state.user = user
@@ -22,10 +41,14 @@ export const mutations: MutationTree<ChatState> = {
     state.isOpenSidebar = value
   },
   [SET_CONVERSATION](state: ChatState, conversations: Conversation[]) {
+    conversations.forEach((c) => {
+      transformConversation(c, state.senderType)
+    })
     state.conversations = conversations
   },
-  [SET_CURRENT_CONVERSATION](state: ChatState, conversation: Conversation) {
-    state.curConversation = conversation
+  [SET_CURRENT_CONVERSATION](state: ChatState, c: Conversation) {
+    transformConversation(c, state.senderType)
+    state.curConversation = c
   },
   [SET_MESSAGES](state: ChatState, messages: Message[]) {
     if (messages.length > 0) state.messages = [...messages, ...state.messages]
@@ -51,8 +74,9 @@ export const mutations: MutationTree<ChatState> = {
 
     state.messages?.push(message)
   },
-  [ADD_CONVERSATION](state: ChatState, conversation: Conversation) {
-    state.conversations?.unshift(conversation)
+  [ADD_CONVERSATION](state: ChatState, c: Conversation) {
+    transformConversation(c, state.senderType)
+    state.conversations?.unshift(c)
   },
   [TOGGLE_SIDEBAR](state: ChatState) {
     state.isOpenSidebar = !state.isOpenSidebar

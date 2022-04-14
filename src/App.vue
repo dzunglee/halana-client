@@ -39,7 +39,6 @@ export default defineComponent({
           `Couldn't initialize the system with error: ${error.message}`,
         )
       })
-      .finally(() => store.commit('SET_LOADING', false))
 
     return { zIndex: 3000, size: 'small' }
   },
