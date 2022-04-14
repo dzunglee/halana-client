@@ -1,7 +1,10 @@
 <template>
   <div
-    class="justify-between flex flex-col border-l opacity-1 transition-all duration-200"
-    :class="{ 'flex-none opacity-0 w-0': !sidebarOpen, 'flex-1': sidebarOpen }"
+    class="justify-between flex flex-col border-l"
+    :class="{
+      'opacity-1 w-80': sidebarOpen,
+      'opacity-0 w-0': !sidebarOpen,
+    }"
   >
     <div
       class="flex flex-col sm:flex-row items-center justify-between py-0 border-b-2 border-gray-200"
@@ -74,7 +77,7 @@
                     msg.type !== senderType && msg.status === 'UNREAD',
                 }"
               >
-                {{ msg.content }} {{ msg.status }}
+                {{ msg.content }}
               </span>
               <span
                 v-if="msg.type !== senderType"
@@ -100,7 +103,7 @@
         </div>
       </div>
     </div>
-    <div class="border-t-2 border-gray-200 px-4 py-[0.4rem] mb-2 sm:mb-0">
+    <div class="border-y-2 border-gray-200 px-4 py-[0.4rem] mb-2 sm:mb-0">
       <div class="flex gap-2">
         <textarea
           ref="inputAreaRef"
@@ -113,10 +116,10 @@
           @keyup="onKeyup"
           v-on:keyup.enter="sendMessage"
         ></textarea>
-        <div class="right-0 items-center inset-y-0 hidden sm:flex gap-2">
+        <div class="right-0 items-center inset-y-0 flex gap-2">
           <button
             type="button"
-            class="mt-auto block inline-flex items-center justify-center rounded-full h-6 w-6 transition duration-500 ease-in-out text-white bg-violet-600 hover:bg-blue-400 focus:outline-none"
+            class="mt-auto inline-flex items-center justify-center rounded-full h-6 w-6 transition duration-500 ease-in-out text-white bg-violet-600 hover:bg-blue-400 focus:outline-none"
             @click="sendMessage"
           >
             <SendSvgIcon />
@@ -184,13 +187,11 @@ export default defineComponent({
     // settings
     const emitterKey = computed<string>(() => store.state.chat.emitterKey)
     const senderType = computed<string>(() => store.state.chat.senderType)
-    const sidebarOpen = computed(() => store.getters['chat/isOpenSidebar'])
+    const sidebarOpen = ref(true)
     const avatar = computed(
       () => `${env('VITE_PROFILE_IMAGE_ENDPOINT')}/${profile.value.avatar}`,
     )
     const loadingMsg = ref(false)
-    const dialogOpen = ref(true)
-    const isDialog = ref(false)
     const inputMsg = ref('')
     const timeOut: any = ref(null)
     const isTyping = ref(false)
@@ -365,7 +366,6 @@ export default defineComponent({
       },
     )
     onMounted(() => {
-      subscribe(`chat/conversation/customer/${profile.value.id}`)
       scrollToBottom()
       eventHub?.on('onTyping', () => {
         handleOnType()
@@ -381,6 +381,9 @@ export default defineComponent({
         if (cursor.value) loadMore()
         readMessages()
       })
+      window.addEventListener('resize', () => {
+        sidebarOpen.value = window.innerWidth >= 640
+      })
     })
 
     onBeforeMount(() => {})
@@ -388,8 +391,6 @@ export default defineComponent({
     return {
       senderType,
       sidebarOpen,
-      dialogOpen,
-      isDialog,
       messageGroups,
       curConversation,
       inputAreaRef,

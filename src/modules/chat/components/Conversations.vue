@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="flex flex-col px-0 bg-gray-100 shadow-inner transition-all duration-200 overflow-hidden"
-    :class="{ 'flex-1': !sidebarOpen, '': sidebarOpen }"
-  >
+  <div class="flex flex-col px-0 bg-gray-100 shadow-inner overflow-hidden w-80">
     <div class="relative mt-2 flex mb-2 px-2">
       <span class="absolute inset-y-0 pl-4 flex items-center">
         <SearchSvgIcon /> </span
@@ -30,9 +27,10 @@
         />
         <div class="flex flex-1 flex-col leading-tight pl-3">
           <div class="flex items-center justify-between">
-            <span class="text-sm font-semibold text-slate-700"
+            <span
+              class="text-sm font-semibold text-slate-700 block w-48 truncate"
               >Conversation {{ item.sk }}</span
-            ><span class="text-xs text-slate-500">10:34 PM</span>
+            ><span class="text-xs text-slate-500 block w-14">10:34 PM</span>
           </div>
           <div class="flex items-center justify-between">
             <span class="text-xs text-gray-600">
@@ -97,6 +95,7 @@ export default defineComponent({
     const emitterClient = inject<any>('emitterClient')
     const eventHub = inject<any>('eventHub')
     const store = useStore()
+    const route = useRoute()
     // data
     const conversations = computed<Conversation[]>(
       () => store.state.chat.conversations,
@@ -136,15 +135,22 @@ export default defineComponent({
       })
     }
     const createConversation = () => {
-      store.commit('SET_LOADING', true)
-      store
-        .dispatch('chat/actCreateConversations', {
-          channelId: receiverId.value,
-        })
-        .then((resp: Conversation) => {
-          store.commit(`chat/${SET_CURRENT_CONVERSATION}`, resp)
-          store.commit('SET_LOADING', false)
-        })
+      const { name, avatar } = route.query
+      if (name && avatar) {
+        store.commit('SET_LOADING', true)
+        store
+          .dispatch('chat/actCreateConversations', {
+            channelId: receiverId.value,
+            supplierProfile: {
+              name,
+              img: avatar,
+            },
+          })
+          .then((resp: Conversation) => {
+            store.commit(`chat/${SET_CURRENT_CONVERSATION}`, resp)
+            store.commit('SET_LOADING', false)
+          })
+      }
     }
     const handleSelectConversation = (item: Conversation) => {
       store.commit(`chat/${SET_CURRENT_CONVERSATION}`, item)
