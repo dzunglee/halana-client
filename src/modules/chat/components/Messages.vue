@@ -1,6 +1,6 @@
 <template>
   <div
-    class="justify-between flex flex-1 flex-col transition-all duration-200"
+    class="justify-between flex flex-1 flex-col transition-all duration-100"
     :class="{
       'opacity-1 border-l ': sidebarOpen,
       'opacity-0 flex none': !sidebarOpen,
@@ -8,7 +8,7 @@
   >
     <div
       v-if="curConversation"
-      class="flex flex-col sm:flex-row items-center justify-between py-0 border-b-2 border-gray-200 w-full"
+      class="flex flex-row items-center justify-between py-0 border-b-2 border-gray-200 w-full"
     >
       <div class="flex items-center p-2">
         <img
@@ -98,7 +98,7 @@
         </div>
       </div>
     </div>
-    <div class="border-y-2 border-gray-200 px-4 py-[0.4rem] mb-2 sm:mb-0">
+    <div class="border-y-2 border-gray-200 px-4 py-[0.4rem] mb-0">
       <div class="flex gap-2">
         <textarea
           ref="inputAreaRef"
