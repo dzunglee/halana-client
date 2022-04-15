@@ -61,14 +61,14 @@ export const mutations: MutationTree<ChatState> = {
     state.receiverId = id
   },
   [ADD_MESSAGE](state: ChatState, message: Message) {
-    state.conversations?.forEach((conversation: Conversation) => {
-      if (conversation._id === message.conversationId) {
-        conversation.latestMessage = message
-        if (
-          conversation.unreadCount !== undefined &&
-          message.type !== state.senderType
+    state.conversations?.forEach((c: Conversation) => {
+      if (c._id === message.conversationId) {
+        c.latestMessage = { ...message }
+        c.latestMessage.createdAt = dayjs(c.latestMessage.createdAt).format(
+          'hh:mm',
         )
-          conversation.unreadCount += 1
+        if (c.unreadCount !== undefined && message.type !== state.senderType)
+          c.unreadCount += 1
       }
     })
 

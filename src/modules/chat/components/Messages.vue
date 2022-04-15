@@ -69,6 +69,7 @@
                 class="text-sm mx-1 flex items-center"
               >
                 <TickSvgIcon v-if="msg.status === 'READ'" class="mr-1" />
+                <em v-else class="w-4 h-4 mr-1"></em>
                 <span>{{ formatDate(msg.createdAt) }}</span>
               </span>
               <span
@@ -401,5 +402,26 @@ export default defineComponent({
 <style scoped>
 textarea:focus {
   box-shadow: none !important;
+}
+::-webkit-scrollbar {
+  width: 5px;
+  height: 7px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 5px #c1c1c1c0;
+  border-radius: 10px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #b1b1b1;
 }
 </style>
