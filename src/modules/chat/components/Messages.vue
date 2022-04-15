@@ -10,7 +10,7 @@
       v-if="curConversation"
       class="flex flex-row items-center justify-between py-0 border-b-2 border-gray-200 w-full"
     >
-      <div class="flex items-center p-2">
+      <div class="flex items-center p-1">
         <img
           v-if="curConversation.profile?.img"
           :src="curConversation.profile.img"
@@ -109,6 +109,7 @@
           rows="1"
           v-model="inputMsg"
           @keyup="onKeyup"
+          @focus="onInputFocus"
           v-on:keyup.enter="sendMessage"
         ></textarea>
         <div class="right-0 items-center inset-y-0 flex gap-2">
@@ -130,7 +131,6 @@ import {
   computed,
   defineComponent,
   inject,
-  onBeforeMount,
   onMounted,
   ref,
   watch,
@@ -171,6 +171,7 @@ export default defineComponent({
   setup() {
     const emitterClient = inject<any>('emitterClient')
     const eventHub = inject<any>('eventHub')
+    const $message = inject<IMessage>('$message')
     const store = useStore()
     // ref
     const inputAreaRef = ref<any>(null)
@@ -310,9 +311,14 @@ export default defineComponent({
           const { hasNextPage, cursor: newCursor } = resp
           isReadyLoadMore.value = hasNextPage
           cursor.value = newCursor
-          loadingMsg.value = false
           chatContainerRef.value.scrollTop =
             chatContainerRef.value.scrollHeight - oldScrollHeight
+        })
+        .catch((error: Error) => {
+          $message?.error(`Can not load conversations: ${error?.message}`)
+        })
+        .finally(() => {
+          loadingMsg.value = false
         })
     }
     const readMessage = (_id: string) => {
@@ -323,8 +329,8 @@ export default defineComponent({
     }
 
     const readMessages = () => {
-      const start = chatContainerRef.value.scrollTop + 50
-      const end = start + chatContainerRef.value.clientHeight
+      const start = chatContainerRef.value.scrollTop
+      const end = start + chatContainerRef.value.clientHeight + 50
       const unReadList = Array.prototype.slice.call(
         document.getElementsByClassName('unRead'),
       )
@@ -341,6 +347,9 @@ export default defineComponent({
     }
     const formatDate = (date: Date) => {
       return dayjs(date).format('hh:mm')
+    }
+    const onInputFocus = () => {
+      chatContainerRef.value.dispatchEvent(new Event('scroll'))
     }
     watch(
       curConversation,
@@ -368,6 +377,12 @@ export default defineComponent({
       })
       eventHub?.on('onMsgCome', (msg: Message) => {
         if (msg.type !== senderType.value) {
+          console.log(inputAreaRef.value === document.activeElement)
+          if (inputAreaRef.value === document.activeElement) {
+            setTimeout(() => {
+              chatContainerRef.value.dispatchEvent(new Event('scroll'))
+            })
+          }
           isTyping.value = false
         } else {
           scrollToBottom()
@@ -395,6 +410,7 @@ export default defineComponent({
       onKeyup,
       sendMessage,
       formatDate,
+      onInputFocus,
     }
   },
 })
